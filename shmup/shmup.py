@@ -15,8 +15,8 @@ from os import listdir
 img_dir = path.join(path.dirname(__file__), 'img')
 snd_dir = path.join(path.dirname(__file__), 'snd')
 
-WIDTH = 480
-HEIGHT = 600
+WIDTH = 480*2
+HEIGHT = 320*2
 FPS = 60
 POWERUP_TIME = 5000
 
@@ -203,7 +203,7 @@ in_end_game_animation = False
 in_end_gegner = False
 end_game_animation_time = pygame.time.get_ticks()
 game_sound_volume = 0.6
-level = 1
+level = 10
 make_game_values_more_difficult(False)
 
 # initialize pygame and create window
@@ -258,60 +258,70 @@ def newenemy():
     all_sprites.add(m)
     mobs.add(m)
 
-def draw_shield_bar(surf, x, y, pct):
-    if pct < 0:
-        pct = 0
-    BAR_LENGTH = 100
-    BAR_HEIGHT = 10
-    fill = (pct) * BAR_LENGTH
+def draw_shield_bar(surf,x,y):
+    BAR_LENGTH = 20
+    BAR_HEIGHT = HEIGHT-60
+    fill = (player.health / player_shield) * BAR_HEIGHT
+    if fill < 0:
+        fill = 0
+    if fill > BAR_HEIGHT:
+        fill = BAR_HEIGHT
     outline_rect = pygame.Rect(x, y, BAR_LENGTH, BAR_HEIGHT)
-    fill_rect = pygame.Rect(x, y, fill, BAR_HEIGHT)
+    fill_rect = pygame.Rect(x, y+BAR_HEIGHT-fill, BAR_LENGTH, fill)
     pygame.draw.rect(surf, GREEN, fill_rect)
     pygame.draw.rect(surf, WHITE, outline_rect, 2)
 
-def draw_lives(surf, x, y, lives, img):
-    for i in range(lives):
+def draw_lives(surf,x,y,img):
+    for i in range(player.lives):
         img_rect = img.get_rect()
-        img_rect.x = x + 30 * i
-        img_rect.y = y
+        img_rect.x = x
+        img_rect.y = y - 40 * i
         surf.blit(img, img_rect)
 
-def draw_center_bar(surf,x_center,y):
-    draw_text(screen, str(level), 50, x_center, y+8)
-    BAR_LENGTH = 100
-    BAR_HEIGHT = 8
-    fill = (score/needed_score) * BAR_LENGTH
-    outline_rect = pygame.Rect(x_center-BAR_LENGTH/2, y, BAR_LENGTH, BAR_HEIGHT)
-    fill_rect = pygame.Rect(x_center-BAR_LENGTH/2, y , fill, BAR_HEIGHT)
+def draw_level(surf,x,y):
+    draw_text(surf, str(level), 50, x+10, y-5)
+    BAR_LENGTH = 20
+    BAR_HEIGHT = HEIGHT -60
+    fill = (score/needed_score) * BAR_HEIGHT
+    if fill < 0:
+        fill = 0
+    if fill > BAR_HEIGHT:
+        fill = BAR_HEIGHT
+    outline_rect = pygame.Rect(x, y+50, BAR_LENGTH, BAR_HEIGHT)
+    fill_rect = pygame.Rect(x, y+50+BAR_HEIGHT-fill, BAR_LENGTH, fill)
     pygame.draw.rect(surf, RED, fill_rect)
-    pygame.draw.rect(surf, WHITE, outline_rect, 1)
+    pygame.draw.rect(surf, WHITE, outline_rect, 2)
 
-def draw_end_gegner_bar(surf,x_center,y):
-    BAR_LENGTH = 100
-    BAR_HEIGHT = 8
-    fill = (end_gegner.health / end_gegner_health) * BAR_LENGTH
-    outline_rect = pygame.Rect(x_center - BAR_LENGTH / 2, y, BAR_LENGTH, BAR_HEIGHT)
-    fill_rect = pygame.Rect(x_center - BAR_LENGTH / 2, y, fill, BAR_HEIGHT)
+def draw_end_gegner_bar(surf,x,y):
+    BAR_LENGTH = 20
+    BAR_HEIGHT = HEIGHT -60
+    fill = (end_gegner.health / end_gegner_health) * BAR_HEIGHT
+    if fill < 0:
+        fill = 0
+    if fill > BAR_HEIGHT:
+        fill = BAR_HEIGHT
+    outline_rect = pygame.Rect(x, y, BAR_LENGTH, BAR_HEIGHT)
+    fill_rect = pygame.Rect(x, y+BAR_HEIGHT-fill, BAR_LENGTH, fill)
     pygame.draw.rect(surf, YELLOW, fill_rect)
-    pygame.draw.rect(surf, BLACK, outline_rect, 1)
+    pygame.draw.rect(surf, WHITE, outline_rect, 2)
 
-def show_on_screen(calling_reason):
-    screen.blit(background, background_rect)
+def show_on_screen(surf,calling_reason):
+    surf.blit(background, background_rect)
 
     if calling_reason == LOST_GAME:
-        draw_text(screen, "Verloren", 32, WIDTH / 2, HEIGHT / 2.2)
-        draw_text(screen, "Verusuche es gleich nochmal", 28, WIDTH / 2, HEIGHT / 1.8)
+        draw_text(surf, "Verloren", 32, WIDTH / 2, HEIGHT / 2.2)
+        draw_text(surf, "Verusuche es gleich nochmal", 28, WIDTH / 2, HEIGHT / 1.8)
     elif calling_reason == WON_GAME:
-        draw_text(screen, "Gewonnen", 32, WIDTH / 2, HEIGHT / 2.2)
-        draw_text(screen, "Schaffst du das nächste Level auch?", 28, WIDTH / 2, HEIGHT / 1.8)
+        draw_text(surf, "Gewonnen", 32, WIDTH / 2, HEIGHT / 2.2)
+        draw_text(surf, "Schaffst du das nächste Level auch?", 28, WIDTH / 2, HEIGHT / 1.8)
     elif calling_reason == START_GAME:
-        draw_text(screen, "Shut them up!", 32, WIDTH / 2, HEIGHT / 2.2)
-        draw_text(screen, "Action Game", 28, WIDTH / 2, HEIGHT / 1.8)
+        draw_text(surf, "Shut them up!", 32, WIDTH / 2, HEIGHT / 2.2)
+        draw_text(surf, "Action Game", 28, WIDTH / 2, HEIGHT / 1.8)
 
-    draw_text(screen, "SHMUP!", 64, WIDTH / 2, HEIGHT / 6.5)
-    draw_text(screen, "Level: "+str(level), 45, WIDTH / 2, HEIGHT / 3.5)
-    draw_text(screen, "Pfeiltasten zum Bewegen, Leertaste zum schießen", 20,WIDTH / 2, HEIGHT * 3/4)
-    draw_text(screen, "Drücke ein ebeliebige Taste zum starten", 15, WIDTH / 2, HEIGHT * 4/5)
+    draw_text(surf, "SHMUP!", 64, WIDTH / 2, HEIGHT / 6.5)
+    draw_text(surf, "Level: "+str(level), 45, WIDTH / 2, HEIGHT / 3.5)
+    draw_text(surf, "Pfeiltasten zum Bewegen, Leertaste zum schießen", 20,WIDTH / 2, HEIGHT * 3/4)
+    draw_text(surf, "Drücke ein ebeliebige Taste zum starten", 15, WIDTH / 2, HEIGHT * 4/5)
 
     pygame.display.flip()
     waiting = True
@@ -394,6 +404,9 @@ class Player(pygame.sprite.Sprite):
         now = pygame.time.get_ticks()
         if now - self.last_shot > self.shoot_delay:
             self.last_shot = now
+            # wenn du gegen den end gegner spielst hast du nicht so gute Schüsse, da die Berechnung der Treffer bei vielen SChüssen zu lange braucht
+            if in_end_gegner and self.power > 2:
+                self.power = 2
             if self.power == 1:
                 bullet = Bullet(self.rect.centerx, self.rect.top)
                 all_sprites.add(bullet)
@@ -727,6 +740,7 @@ class Shield(pygame.sprite.Sprite):
 
 # Load all game graphics
 background = pygame.image.load(path.join(img_dir, "starfield.png")).convert()
+background = pygame.transform.scale(background,(WIDTH,HEIGHT))
 background_rect = background.get_rect()
 player_imges = load_graphics_from_file_array    (["playerShip1_blue.png","playerShip1_green.png","playerShip1_orange.png","playerShip1_red.png"],path.join(img_dir,"Player"),WHITE)
 big_bullet_imges = load_graphics_from_file_array(["laserBlue_big.png","laserGreen_big.png","laserRed_big.png","laserRed_big.png"],path.join(path.join(img_dir,"Player"),"Lasers"))
@@ -780,7 +794,7 @@ enemy_color = random.choice(enemy_colors)
 # Game loop
 while running:
     if game_over != None:
-        show_on_screen(game_over)
+        show_on_screen(screen,game_over)
         game_over = None
         all_sprites = pygame.sprite.Group()
         mobs = pygame.sprite.Group()
@@ -790,7 +804,7 @@ while running:
         shields = pygame.sprite.Group()
         player = Player()
         player.start_shield()
-        player_mini_img = pygame.transform.scale(player_imges[player.color], (25, 19))
+        player_mini_img = pygame.transform.scale(player_imges[player.color], (37, 28))
         player_mini_img.set_colorkey(BLACK)
         all_sprites.add(player)
         make_game_values_more_difficult()
@@ -803,6 +817,8 @@ while running:
         score = 0
 
     #clear screen
+    screen.fill(BLACK)
+    screen.blit(background, background_rect)
     screen.fill(BLACK)
     screen.blit(background, background_rect)
 
@@ -839,7 +855,7 @@ while running:
 
     # check to see if a bullet hit the end gegner
     if level % 10 == 0 and in_end_gegner == True and needed_score >= score:
-        draw_end_gegner_bar(screen, WIDTH/2, 50)
+        draw_end_gegner_bar(screen, 50, 55)
         found_hit = False
         hit_place = (-100,-100)
         for bullet in bullets:
@@ -850,6 +866,7 @@ while running:
                 bullet.kill()
                 end_gegner.health -= 1
                 if end_gegner.health <= 0:
+                    print("end_gegner is dead "+str(end_gegner.alive()))
                     end_gegner.kill()
                 random.choice(expl_sounds).play()
                 expl = Explosion(hit, 'lg')
@@ -930,9 +947,11 @@ while running:
     # if the player died and the explosion has finished playing
     if player.lives == 0 and not death_explosion.alive():
         game_over = LOST_GAME
+        in_end_game_animation = False
+        in_end_gegner = False
 
     # if the player reached the score for this level the animation at the end of the game starts
-    if score >= needed_score and in_end_game_animation == False:
+    if score >= needed_score and in_end_game_animation == False and player.alive() and game_over == None:
         if level%10 == 0:
             if in_end_gegner and not end_gegner.alive():
                 in_end_gegner = False
@@ -956,15 +975,15 @@ while running:
             end_game_animation_time = pygame.time.get_ticks()
             if len(mobs.sprites()) == 0:
                 in_end_game_animation = False
-        else:
+        elif len(mobs) == 0:
             in_end_game_animation = False
     # when the animation at the and of the game is finished the level ends and player goes to the next one
-    if in_end_game_animation == False and in_end_gegner == False and score >= needed_score and end_game_animation_time+700 < pygame.time.get_ticks():
+    if in_end_game_animation == False and in_end_gegner == False and score >= needed_score and end_game_animation_time+700 < pygame.time.get_ticks() and game_over==None:
         level += 1
         game_over = WON_GAME
         # make sprite images new to get game having differnet colors each time
         Player.color = random.randrange(0,len(player_imges))
-        player_mini_img = pygame.transform.scale(player_imges[player.color], (25, 19))
+        player_mini_img = pygame.transform.scale(player_imges[player.color], (37, 28))
         player_mini_img.set_colorkey(BLACK)
         meteor_images = random.choice([brown_meteor_images, grey_meteor_images])
         enemy_color = random.choice(enemy_colors )
@@ -972,10 +991,11 @@ while running:
         make_game_values_more_difficult()
 
     # Draw / render
-    all_sprites.draw(screen)
-    draw_center_bar(screen,WIDTH/2,5)
-    draw_shield_bar(screen, 5, 5, player.health / player_shield)
-    draw_lives(screen, WIDTH - 130, 5, player.lives, player_mini_img)
+    if game_over == None:
+        all_sprites.draw(screen)
+    draw_level(screen,10,5)
+    draw_shield_bar(screen, WIDTH-30, 55)
+    draw_lives(screen, WIDTH - 80, HEIGHT-40, player_mini_img)
     # after drawing everything, flip the display
     pygame.display.flip()
 
