@@ -465,6 +465,7 @@ class Bullet(pygame.sprite.Sprite):
         self.rect.bottom = y
         self.rect.centerx = x
         self.speedy = -bullet_speed
+        self.mask = pygame.mask.from_surface(self.image)
 
     def update(self):
         self.rect.y += self.speedy
@@ -812,7 +813,6 @@ while running:
         player_mini_img.set_colorkey(BLACK)
         all_sprites.add(player)
         make_game_values_more_difficult()
-        needed_score = 50
         if level % 5 == 0:
             for i in range(anz_enemies):
                 newenemy()
@@ -868,7 +868,7 @@ while running:
         draw_end_gegner_bar(screen, 50, 55)
         found_hit = False
         hit_place = (-100,-100)
-        hits = pygame.sprite.spritecollide(end_gegner, bullets, False)
+        hits = pygame.sprite.spritecollide(end_gegner, bullets, False, True)
         if len(hits) > 0:
             end_gegner.mask = pygame.mask.from_surface(end_gegner.image)
             for bullet in bullets:
