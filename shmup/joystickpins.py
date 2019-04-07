@@ -95,13 +95,13 @@ class JoystickPins():
         return self._axis_y
 
     def get_A(self):
-        return self.joystick.get_button(self.A)
+        return self.joystick.get_button(self._A)
     def get_B(self):
-        return self.joystick.get_button(self.B)
+        return self.joystick.get_button(self._B)
     def get_X(self):
-        return self.joystick.get_button(self.X)
+        return self.joystick.get_button(self._X)
     def get_Y(self):
-        return self.joystick.get_button(self.Y)
+        return self.joystick.get_button(self._Y)
     def get_select(self):
         return self.joystick.get_button(self._select)
     def get_start(self):

@@ -29,6 +29,7 @@ LEFT = "left"
 RIGHT = "right"
 SHOOT = "shoot"
 ENEMY = "enemy"
+ESC = "escape"
 
 #game_variables
 player_lives = 4
@@ -199,6 +200,7 @@ PINK = ()
 # others
 enemy_colors = ["Black","Blue","Green","Red"]
 end_gegner_shoot_loc = {"10":[(0,5),(61,48),(-61,48),(120,80),(-120,80)],"11":[(0,5),(61,48),(-61,48),(120,80),(-120,80)],"12":[(0,50),(58,55),(-58,55),(123,75),(-123,75)],"13":[(0,10),(32,32),(-32,32),(70,50),(-70,50)],"14":[(0,10),(40,25),(-40,25),(67,45),(-67,45)],"15":[(0,10),(25,42),(-25,42),(75,70),(-75,70)],"16":[(0,10),(37,32),(-37,32),(93,75),(-93,75)],"17":[(0,10),(57,54),(-57,54),(102,80),(-102,80)],"18":[(0,0),(52,46),(-52,46),(96,95),(-96,95)],"19":[(0,45),(58,55),(-58,55),(92,86),(-92,86)],"20":[(0,0),(67,32),(-67,32),(116,68),(-116,68)],"21":[(0,5),(48,25),(-48,25),(93,67),(-93,67)]}
+multiplayer = False
 game_over = START_GAME
 running = True
 in_end_game_animation = False
@@ -218,16 +220,16 @@ pygame.display.set_caption("Shmup!")
 clock = pygame.time.Clock()
 #inittialize joysticks and buttons
 my_joystick = JoystickPins(None)
+all_joysticks = []
 for joy in range(pygame.joystick.get_count()):
     pygame_joystick = pygame.joystick.Joystick(joy)
     pygame_joystick.init()
-    my_joystick = JoystickPins(pygame_joystick)
-
+    all_joysticks.append(JoystickPins(pygame_joystick))
 
 font_name = pygame.font.match_font('arial')
-def draw_text(surf, text, size, x, y):
+def draw_text(surf, text, size, x, y, color = WHITE):
     font = pygame.font.Font(font_name, size)
-    text_surface = font.render(text, True, WHITE)
+    text_surface = font.render(text, True, color)
     text_rect = text_surface.get_rect()
     text_rect.midtop = (x, y)
     surf.blit(text_surface, text_rect)
@@ -316,7 +318,7 @@ def draw_end_gegner_bar(surf,x,y):
     pygame.draw.rect(surf, YELLOW, fill_rect)
     pygame.draw.rect(surf, WHITE, outline_rect, 2)
 
-def show_on_screen(surf,calling_reason):
+def show_on_screen(surf,calling_reason, selected = None, with_waiting = True):
     surf.blit(background, background_rect)
 
     if calling_reason == LOST_GAME:
@@ -327,22 +329,72 @@ def show_on_screen(surf,calling_reason):
         draw_text(surf, "Schaffst du das nächste Level auch?", 28, WIDTH / 2, HEIGHT / 1.8)
     elif calling_reason == START_GAME:
         draw_text(surf, "Shut them up!", 32, WIDTH / 2, HEIGHT / 2.2)
-        draw_text(surf, "Action Game", 28, WIDTH / 2, HEIGHT / 1.8)
+        if selected == 0:
+            draw_text(surf, "Multi player", 34, WIDTH / 2 + 100, HEIGHT / 1.8, color = RED)
+            draw_text(surf, "Single player", 25, WIDTH / 2 - 100, HEIGHT / 1.8 + 8)
+        else:
+            draw_text(surf, "Multi player", 25, WIDTH / 2 + 100, HEIGHT / 1.8 + 8)
+            draw_text(surf, "Single player", 34, WIDTH / 2 - 100, HEIGHT / 1.8, color = RED)
 
     draw_text(surf, "SHMUP!", 64, WIDTH / 2, HEIGHT / 6.5)
     draw_text(surf, "Level: "+str(level), 45, WIDTH / 2, HEIGHT / 3.5)
-    draw_text(surf, "Pfeiltasten zum Bewegen, Leertaste zum schießen", 20,WIDTH / 2, HEIGHT * 3/4)
+    draw_text(surf, "Pfeiltasten oder Joystick zum Bewegen, Leertaste oder A/B zum schießen", 20,WIDTH / 2, HEIGHT * 3/4)
     draw_text(surf, "Drücke ein ebeliebige Taste zum starten", 15, WIDTH / 2, HEIGHT * 4/5)
 
     pygame.display.flip()
-    waiting = True
-    while waiting:
-        clock.tick(FPS)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-            if event.type == pygame.KEYUP or event.type == pygame.JOYBUTTONUP:
-                waiting = False
+    if with_waiting:
+        waiting = True
+        while waiting:
+            clock.tick(FPS)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                if event.type == pygame.JOYBUTTONUP:
+                    waiting = False
+
+def check_key_pressed(check_for,joystick_num="both"):
+    if multiplayer:
+        if joystick_num == "both":
+            for joystick in all_joysticks:
+                if check_for == LEFT:
+                    if joystick.get_axis_left() or joystick.get_shoulder_left():
+                        return True
+                if check_for == RIGHT:
+                    if joystick.get_axis_right() or joystick.get_shoulder_right():
+                        return True
+                if check_for == SHOOT:
+                    if joystick.get_A() or joystick.get_B():
+                        return True
+                if check_for == ESC:
+                    if joystick.get_select() and joystick.get_start():
+                        return True
+        else:
+            if check_for == LEFT:
+                if all_joysticks[joystick_num].get_axis_left() or all_joysticks[joystick_num].get_shoulder_left():
+                    return True
+            if check_for == RIGHT:
+                if all_joysticks[joystick_num].get_axis_right() or all_joysticks[joystick_num].get_shoulder_right():
+                    return True
+            if check_for == SHOOT:
+                if all_joysticks[joystick_num].get_A() or all_joysticks[joystick_num].get_B():
+                    return True
+            if check_for == ESC:
+                if all_joysticks[joystick_num].get_select() and all_joysticks[joystick_num].get_start():
+                    return True
+    else:
+        if check_for == LEFT:
+            if all_joysticks[0].get_axis_left() or all_joysticks[0].get_shoulder_left():
+                return True
+        if check_for == RIGHT:
+            if all_joysticks[0].get_axis_right() or all_joysticks[0].get_shoulder_right():
+                return True
+        if check_for == SHOOT:
+            if all_joysticks[0].get_A() or all_joysticks[0].get_B():
+                return True
+        if check_for == ESC:
+            if all_joysticks[0].get_select() and all_joysticks[0].get_start():
+                return True
+    return False
 
 class Player(pygame.sprite.Sprite):
     def __init__(self):
@@ -386,12 +438,11 @@ class Player(pygame.sprite.Sprite):
             self.rect.bottom = HEIGHT - 10
 
         self.speedx = 0
-        keystate = pygame.key.get_pressed()
-        if keystate[pygame.K_LEFT] or my_joystick.get_axis_left() or my_joystick.get_shoulder_left():
+        if check_key_pressed(LEFT,0):
             self.speedx = -player_speed
-        if keystate[pygame.K_RIGHT] or my_joystick.get_axis_right() or my_joystick.get_shoulder_right():
+        if check_key_pressed(RIGHT,0):
             self.speedx = player_speed
-        if keystate[pygame.K_SPACE] or my_joystick.get_A() or my_joystick.get_B():
+        if check_key_pressed(SHOOT,0):
             self.shoot()
         self.rect.x += self.speedx
         if self.rect.right > WIDTH:
@@ -806,6 +857,37 @@ pygame.mixer.music.play(loops=-1)
 meteor_images = random.choice([brown_meteor_images,grey_meteor_images])
 enemy_color = random.choice(enemy_colors)
 
+# Multi-player-select
+selected = 1
+waiting = True
+while waiting:
+    show_on_screen(screen, game_over, selected, with_waiting=False)
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+        if event.type == pygame.JOYBUTTONDOWN or event.type == pygame.JOYAXISMOTION:
+            if check_key_pressed(LEFT) or check_key_pressed(RIGHT):
+                selected += 1
+                if selected > 1:
+                    selected = 0
+            elif check_key_pressed(SHOOT) or check_key_pressed(ESC):
+                if selected == 1:
+                    if len(all_joysticks) == 1:
+                        waiting = False
+                        end_game = None
+                        multiplayer = False
+                    else:
+                        print("to many joysticks")
+                elif selected == 0:
+                    if len(all_joysticks) < 2:
+                        print("to less joysticks")
+                    if len(all_joysticks) == 2:
+                        waiting = False
+                        end_game = None
+                        multiplayer = True
+                    if len(all_joysticks) > 2:
+                        print("to many joysticks")
+
 # Game loop
 while running:
     if game_over != None:
@@ -842,8 +924,7 @@ while running:
     clock.tick(FPS)
 
     # Process input (events)
-    keystate = pygame.key.get_pressed()
-    if keystate[pygame.K_ESCAPE] or (my_joystick.get_select() and my_joystick.get_start()):
+    if check_key_pressed(ESC):
         running = False
     for event in pygame.event.get():
         # check for closing window
