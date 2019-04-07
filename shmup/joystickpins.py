@@ -2,7 +2,7 @@ from pygame import joystick
 
 #Pins-Mapping: (A, B, X, Y, SELECT, START, SHOULDER_LEFT, SHOULDER_RIGHT, AXIS_X, AXIS_Y)
 joystick_mappings = {
-            "USB Gamepad" :       {
+            "USB Gamepad " :       {
                 "A"         : 1,
                 "B"         : 2,
                 "X"         : 0,
@@ -29,23 +29,23 @@ joystick_mappings = {
         }
 
 class JoystickPins():
-    def __init__(self, joystick, mapping: None):
+    def __init__(self, joystick, mapping = None):
         self.joystick = joystick
         self.name = joystick.get_name()
         if mapping is not None:
             self.mapping = mapping
         else:
             self.mapping = joystick_mappings[self.name]
-        self._A = mapping["A"]
-        self._B = mapping["B"]
-        self._X = mapping["X"]
-        self._Y = mapping["Y"]
-        self._select = mapping["SELECT"]
-        self._start  = mapping["START"]
-        self._shoulder_left  = mapping["SH_LEFT"]
-        self._shoulder_right = mapping["SH_RIGHT"]
-        self._axis_x = mapping["AXIS_X"]
-        self._axis_y = mapping["AXIS_Y"]
+        self._A = self.mapping["A"]
+        self._B = self.mapping["B"]
+        self._X = self.mapping["X"]
+        self._Y = self.mapping["Y"]
+        self._select = self.mapping["SELECT"]
+        self._start  = self.mapping["START"]
+        self._shoulder_left  = self.mapping["SH_LEFT"]
+        self._shoulder_right = self.mapping["SH_RIGHT"]
+        self._axis_x = self.mapping["AXIS_X"]
+        self._axis_y = self.mapping["AXIS_Y"]
 
     def A(self):
         return self._A

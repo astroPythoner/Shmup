@@ -12,6 +12,7 @@ import pygame
 import random
 from os import path
 from os import listdir
+import joystickpins
 
 img_dir = path.join(path.dirname(__file__), 'img')
 snd_dir = path.join(path.dirname(__file__), 'snd')
@@ -202,6 +203,7 @@ game_over = START_GAME
 running = True
 in_end_game_animation = False
 in_end_gegner = False
+won_end_gegner = False
 end_game_animation_time = pygame.time.get_ticks()
 game_sound_volume = 0.6
 level = 1
@@ -214,6 +216,11 @@ pygame.mixer.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Shmup!")
 clock = pygame.time.Clock()
+#inittialize joysticks and buttons
+pygame.joystick.init()
+for x in range(pygame.joystick.get_count()):
+    pygame_joystick = pygame.joystick.Joystick(x)
+my_joystick = joystickpins.JoystickPins(pygame_joystick)
 
 font_name = pygame.font.match_font('arial')
 def draw_text(surf, text, size, x, y):
@@ -814,6 +821,8 @@ while running:
         player_mini_img.set_colorkey(BLACK)
         all_sprites.add(player)
         make_game_values_more_difficult()
+        end_gegner_health = 10
+        needed_score = 100
         if level % 5 == 0:
             for i in range(anz_enemies):
                 newenemy()
@@ -926,9 +935,9 @@ while running:
                 player.health -= hit.radius * 2
                 expl = Explosion(hit.rect.center, 'sm')
                 all_sprites.add(expl)
-                if level%5 == 0:
+                if level % 5 == 0 and not (level%10 == 0 and in_end_gegner==True and needed_score>= score):
                     newenemy()
-                else:
+                elif level%5 != 0:
                     newmob()
                 if player.health <= 0:
                     if debug:
@@ -948,9 +957,9 @@ while running:
                 expl = Explosion(hit.rect.center, 'sm')
                 random.choice(expl_sounds).play()
                 all_sprites.add(expl)
-                if level%5 == 0:
+                if level % 5 == 0 and not (level%10 == 0 and in_end_gegner==True and needed_score>= score):
                     newenemy()
-                else:
+                elif level%5 != 0 :
                     newmob()
 
     # check to see if player hit a powerup
@@ -985,7 +994,8 @@ while running:
                     print("Endgegner killed. Showing end game animation")
                 in_end_gegner = False
                 in_end_game_animation = True
-            elif in_end_gegner == False:
+                won_end_gegner = True
+            elif in_end_gegner == False and won_end_gegner == False:
                 if debug:
                     print("Endgegner taucht auf")
                 for i in mobs:
@@ -1010,6 +1020,7 @@ while running:
             if debug:
                 print("All mobs exploded game ends")
             in_end_game_animation = False
+            in_end_gegner = False
     # when the animation at the and of the game is finished the level ends and player goes to the next one
     if in_end_game_animation == False and in_end_gegner == False and score >= needed_score and end_game_animation_time+700 < pygame.time.get_ticks() and game_over==None:
         if debug:
