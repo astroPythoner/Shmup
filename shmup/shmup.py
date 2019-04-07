@@ -12,7 +12,7 @@ import pygame
 import random
 from os import path
 from os import listdir
-import joystickpins
+from joystickpins import JoystickPins
 
 img_dir = path.join(path.dirname(__file__), 'img')
 snd_dir = path.join(path.dirname(__file__), 'snd')
@@ -217,10 +217,10 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Shmup!")
 clock = pygame.time.Clock()
 #inittialize joysticks and buttons
-pygame.joystick.init()
 for x in range(pygame.joystick.get_count()):
     pygame_joystick = pygame.joystick.Joystick(x)
-my_joystick = joystickpins.JoystickPins(pygame_joystick)
+pygame_joystick.init()
+my_joystick = JoystickPins(pygame_joystick)
 
 font_name = pygame.font.match_font('arial')
 def draw_text(surf, text, size, x, y):
@@ -339,7 +339,7 @@ def show_on_screen(surf,calling_reason):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-            if event.type == pygame.KEYUP:
+            if event.type == pygame.KEYUP or event.type == pygame.JOYBUTTONUP:
                 waiting = False
 
 class Player(pygame.sprite.Sprite):
@@ -385,11 +385,11 @@ class Player(pygame.sprite.Sprite):
 
         self.speedx = 0
         keystate = pygame.key.get_pressed()
-        if keystate[pygame.K_LEFT]:
+        if keystate[pygame.K_LEFT] or my_joystick.get_axis_left() or my_joystick.get_shoulder_left():
             self.speedx = -player_speed
-        if keystate[pygame.K_RIGHT]:
+        if keystate[pygame.K_RIGHT] or my_joystick.get_axis_right() or my_joystick.get_shoulder_right():
             self.speedx = player_speed
-        if keystate[pygame.K_SPACE]:
+        if keystate[pygame.K_SPACE] or my_joystick.get_A() or my_joystick.get_B():
             self.shoot()
         self.rect.x += self.speedx
         if self.rect.right > WIDTH:
@@ -821,8 +821,6 @@ while running:
         player_mini_img.set_colorkey(BLACK)
         all_sprites.add(player)
         make_game_values_more_difficult()
-        end_gegner_health = 10
-        needed_score = 100
         if level % 5 == 0:
             for i in range(anz_enemies):
                 newenemy()
@@ -842,7 +840,7 @@ while running:
 
     # Process input (events)
     keystate = pygame.key.get_pressed()
-    if keystate[pygame.K_ESCAPE]:
+    if keystate[pygame.K_ESCAPE] or (my_joystick.get_select() and my_joystick.get_start()):
         running = False
     for event in pygame.event.get():
         # check for closing window
