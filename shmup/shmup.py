@@ -208,7 +208,7 @@ in_end_gegner = False
 won_end_gegner = False
 end_game_animation_time = pygame.time.get_ticks()
 game_sound_volume = 0.6
-level = 1
+level = 10
 make_game_values_more_difficult(False)
 debug = False
 
@@ -397,7 +397,7 @@ def check_key_pressed(check_for,joystick_num="both"):
     return False
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, player_num = 0):
         pygame.sprite.Sprite.__init__(self)
         self.color = random.randrange(0,len(player_imges))
         self.image = pygame.transform.scale(player_imges[self.color], (50, 38))
@@ -900,11 +900,27 @@ while running:
         enemy_bullets = pygame.sprite.Group()
         powerups = pygame.sprite.Group()
         shields = pygame.sprite.Group()
-        player = Player()
-        player.start_shield()
-        player_mini_img = pygame.transform.scale(player_imges[player.color], (37, 28))
-        player_mini_img.set_colorkey(BLACK)
-        all_sprites.add(player)
+        players = []
+        if multiplayer:
+            player1 = Player(0)
+            player1.start_shield()
+            player_mini_img1 = pygame.transform.scale(player_imges[player.color], (37, 28))
+            player_mini_img1.set_colorkey(BLACK)
+            players.append(player1)
+            all_sprites.add(player1)
+            player2 = Player(1)
+            player2.start_shield()
+            player_mini_img2 = pygame.transform.scale(player_imges[player.color], (37, 28))
+            player_mini_img2.set_colorkey(BLACK)
+            players.append(player2)
+            all_sprites.add(player2)
+        else:
+            player1 = Player()
+            player1.start_shield()
+            player_mini_img1 = pygame.transform.scale(player_imges[player.color], (37, 28))
+            player_mini_img1.set_colorkey(BLACK)
+            players.append(player1)
+            all_sprites.add(player1)
         make_game_values_more_difficult()
         if level % 5 == 0:
             for i in range(anz_enemies):
@@ -974,6 +990,9 @@ while running:
                         if debug:
                             print("end_gegner is dead "+str(end_gegner.alive()))
                         end_gegner.kill()
+                        player_die_sound.play()
+                        giant_explosion = Explosion(end_gegner.rect.center, 'player')
+                        all_sprites.add(giant_explosion)
                     random.choice(expl_sounds).play()
                     expl = Explosion((hit[0]+end_gegner.rect.x,hit[1]+end_gegner.rect.y), 'lg')
                     all_sprites.add(expl)
@@ -983,90 +1002,91 @@ while running:
                 powerups.add(pow)
 
     # check to see if a enemyshot hit the player
-    if (in_end_game_animation == False and score < needed_score and level%5 == 0) or (level%10 == 0 and in_end_gegner==True and needed_score >= score):
-        if not player.having_shield:
-            hits = pygame.sprite.spritecollide(player, enemy_bullets, True)
-            for hit in hits:
-                player.health -= 5
-                expl = Explosion(hit.rect.center, 'sm')
-                all_sprites.add(expl)
-                if player.health <= 0:
-                    if debug:
-                        print("player killed by shoot")
-                    player_die_sound.play()
-                    death_explosion = Explosion(player.rect.center, 'player')
-                    all_sprites.add(death_explosion)
-                    player.hide()
-                    player.lives -= 1
-                    player.health = player_shield
-                    player.start_shield()
-                else:
+    for player in players:
+        if (in_end_game_animation == False and score < needed_score and level%5 == 0) or (level%10 == 0 and in_end_gegner==True and needed_score >= score):
+            if not player.having_shield:
+                hits = pygame.sprite.spritecollide(player, enemy_bullets, True)
+                for hit in hits:
+                    player.health -= 5
+                    expl = Explosion(hit.rect.center, 'sm')
+                    all_sprites.add(expl)
+                    if player.health <= 0:
+                        if debug:
+                            print("player killed by shoot")
+                        player_die_sound.play()
+                        death_explosion = Explosion(player.rect.center, 'player')
+                        all_sprites.add(death_explosion)
+                        player.hide()
+                        player.lives -= 1
+                        player.health = player_shield
+                        player.start_shield()
+                    else:
+                        random.choice(expl_sounds).play()
+            else:
+                hits = pygame.sprite.spritecollide(player.player_shield_sprite, enemy_bullets, True)
+                for hit in hits:
+                    expl = Explosion(hit.rect.center, 'sm')
                     random.choice(expl_sounds).play()
-        else:
-            hits = pygame.sprite.spritecollide(player.player_shield_sprite, enemy_bullets, True)
-            for hit in hits:
-                expl = Explosion(hit.rect.center, 'sm')
-                random.choice(expl_sounds).play()
-                all_sprites.add(expl)
+                    all_sprites.add(expl)
 
     # check to see if a mob hit the player
-    if (in_end_game_animation == False and score < needed_score) or (level%10 == 0 and in_end_gegner==True and needed_score >= score):
-        if not player.having_shield:
-            hits = pygame.sprite.spritecollide(player, mobs, True, pygame.sprite.collide_circle)
-            for hit in hits:
-                player.health -= hit.radius * 2
-                expl = Explosion(hit.rect.center, 'sm')
-                all_sprites.add(expl)
-                if level % 5 == 0 and not (level%10 == 0 and in_end_gegner==True and needed_score>= score):
-                    newenemy()
-                elif level%5 != 0:
-                    newmob()
-                if player.health <= 0:
-                    if debug:
-                        print("player killed by mob")
-                    player_die_sound.play()
-                    death_explosion = Explosion(player.rect.center, 'player')
-                    all_sprites.add(death_explosion)
-                    player.hide()
-                    player.lives -= 1
-                    player.health = player_shield
-                    player.start_shield()
-                else:
+        if (in_end_game_animation == False and score < needed_score) or (level%10 == 0 and in_end_gegner==True and needed_score >= score):
+            if not player.having_shield:
+                hits = pygame.sprite.spritecollide(player, mobs, True, pygame.sprite.collide_circle)
+                for hit in hits:
+                    player.health -= hit.radius * 2
+                    expl = Explosion(hit.rect.center, 'sm')
+                    all_sprites.add(expl)
+                    if level % 5 == 0 and not (level%10 == 0 and in_end_gegner==True and needed_score>= score):
+                        newenemy()
+                    elif level%5 != 0:
+                        newmob()
+                    if player.health <= 0:
+                        if debug:
+                            print("player killed by mob")
+                        player_die_sound.play()
+                        death_explosion = Explosion(player.rect.center, 'player')
+                        all_sprites.add(death_explosion)
+                        player.hide()
+                        player.lives -= 1
+                        player.health = player_shield
+                        player.start_shield()
+                    else:
+                        random.choice(expl_sounds).play()
+            else:
+                hits = pygame.sprite.spritecollide(player.player_shield_sprite, mobs, True, pygame.sprite.collide_circle)
+                for hit in hits:
+                    expl = Explosion(hit.rect.center, 'sm')
                     random.choice(expl_sounds).play()
-        else:
-            hits = pygame.sprite.spritecollide(player.player_shield_sprite, mobs, True, pygame.sprite.collide_circle)
-            for hit in hits:
-                expl = Explosion(hit.rect.center, 'sm')
-                random.choice(expl_sounds).play()
-                all_sprites.add(expl)
-                if level % 5 == 0 and not (level%10 == 0 and in_end_gegner==True and needed_score>= score):
-                    newenemy()
-                elif level%5 != 0 :
-                    newmob()
+                    all_sprites.add(expl)
+                    if level % 5 == 0 and not (level%10 == 0 and in_end_gegner==True and needed_score>= score):
+                        newenemy()
+                    elif level%5 != 0 :
+                        newmob()
 
     # check to see if player hit a powerup
-    if (in_end_game_animation == False and score < needed_score) or (level%10 == 0 and in_end_gegner==True and needed_score >= score):
-        hits = pygame.sprite.spritecollide(player, powerups, True)
-        for hit in hits:
-            if hit.type == 'shield':
-                player.start_shield()
-                shield_sound.play()
-            if hit.type == 'gun':
-                player.powerup()
-                power_sound.play()
-            if hit.type == 'heal':
-                player.health += random.randrange(shield_power[0], shield_power[1])
-                heal_sound.play()
-                if player.health >= player_shield:
-                    player.health = player_shield
+        if (in_end_game_animation == False and score < needed_score) or (level%10 == 0 and in_end_gegner==True and needed_score >= score):
+            hits = pygame.sprite.spritecollide(player, powerups, True)
+            for hit in hits:
+                if hit.type == 'shield':
+                    player.start_shield()
+                    shield_sound.play()
+                if hit.type == 'gun':
+                    player.powerup()
+                    power_sound.play()
+                if hit.type == 'heal':
+                    player.health += random.randrange(shield_power[0], shield_power[1])
+                    heal_sound.play()
+                    if player.health >= player_shield:
+                        player.health = player_shield
 
     # if the player died and the explosion has finished playing
-    if player.lives == 0 and not death_explosion.alive():
-        if debug:
-            print("player has no lives anymore. Game ends")
-        game_over = LOST_GAME
-        in_end_game_animation = False
-        in_end_gegner = False
+        if player.lives == 0 and not death_explosion.alive():
+            if debug:
+                print("player has no lives anymore. Game ends")
+            game_over = LOST_GAME
+            in_end_game_animation = False
+            in_end_gegner = False
 
     # if the player reached the score for this level the animation at the end of the game starts
     if score >= needed_score and in_end_game_animation == False and player.alive() and game_over == None:
@@ -1124,7 +1144,7 @@ while running:
         all_sprites.draw(screen)
     draw_level(screen,10,5)
     draw_shield_bar(screen, WIDTH-30, 55)
-    draw_lives(screen, WIDTH - 80, HEIGHT-40, player_mini_img)
+    draw_lives(screen, WIDTH - 80, HEIGHT-40, player_mini_img1)
     # after drawing everything, flip the display
     pygame.display.flip()
 
