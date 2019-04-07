@@ -831,6 +831,9 @@ while running:
     clock.tick(FPS)
 
     # Process input (events)
+    keystate = pygame.key.get_pressed()
+    if keystate[pygame.K_ESCAPE]:
+        running = False
     for event in pygame.event.get():
         # check for closing window
         if event.type == pygame.QUIT:
