@@ -51,7 +51,7 @@ end_gegner_enemy_send_time = 750
 end_gegner_mode_change_time = 6000
 end_gegner_anz_enemis_send = 8
 end_gegner_rotation_speed = 1
-end_gegner_health = 250
+end_gegner_health = 125
 needed_score = 100
 
 def make_game_values_more_difficult(player_defined = True):
@@ -62,49 +62,49 @@ def make_game_values_more_difficult(player_defined = True):
         end_gegner_mode_change_time = 6000
         end_gegner_anz_enemis_send = 10
         end_gegner_rotation_speed = 1
-        end_gegner_health = 250
+        end_gegner_health = 125
     if level <= 20:
         end_gegner_bullet_time = 550
         end_gegner_enemy_send_time = 540
         end_gegner_mode_change_time = 6000
         end_gegner_anz_enemis_send = 11
         end_gegner_rotation_speed = 1
-        end_gegner_health = 300
+        end_gegner_health = 145
     if level <= 30:
         end_gegner_bullet_time = 500
         end_gegner_enemy_send_time = 500
         end_gegner_mode_change_time = 6000
         end_gegner_anz_enemis_send = 12
         end_gegner_rotation_speed = 1
-        end_gegner_health = 350
+        end_gegner_health = 165
     if level <= 40:
         end_gegner_bullet_time = 450
         end_gegner_enemy_send_time = 420
         end_gegner_mode_change_time = 5500
         end_gegner_anz_enemis_send = 13
         end_gegner_rotation_speed = 1
-        end_gegner_health = 400
+        end_gegner_health = 185
     if level <= 50:
         end_gegner_bullet_time = 400
         end_gegner_enemy_send_time = 390
         end_gegner_mode_change_time = 5500
         end_gegner_anz_enemis_send = 14
         end_gegner_rotation_speed = 2
-        end_gegner_health = 450
+        end_gegner_health = 200
     if level <= 60:
         end_gegner_bullet_time = 350
         end_gegner_enemy_send_time = 365
         end_gegner_mode_change_time = 5500
         end_gegner_anz_enemis_send = 15
         end_gegner_rotation_speed = 2
-        end_gegner_health = 475
+        end_gegner_health = 215
     if level <= 70:
         end_gegner_bullet_time = 300
         end_gegner_enemy_send_time = 330
         end_gegner_mode_change_time = 5000
         end_gegner_anz_enemis_send = 15
         end_gegner_rotation_speed = 2
-        end_gegner_health = 500
+        end_gegner_health = 220
     else:
         end_gegner_bullet_time = 250
         end_gegner_enemy_send_time = 320
@@ -219,8 +219,8 @@ clock = pygame.time.Clock()
 #inittialize joysticks and buttons
 for x in range(pygame.joystick.get_count()):
     pygame_joystick = pygame.joystick.Joystick(x)
-pygame_joystick.init()
-my_joystick = JoystickPins(pygame_joystick)
+    pygame_joystick.init()
+    my_joystick = JoystickPins(pygame_joystick)
 
 font_name = pygame.font.match_font('arial')
 def draw_text(surf, text, size, x, y):
@@ -807,6 +807,7 @@ enemy_color = random.choice(enemy_colors)
 # Game loop
 while running:
     if game_over != None:
+        won_end_gegner = False
         show_on_screen(screen,game_over)
         game_over = None
         all_sprites = pygame.sprite.Group()
@@ -1025,6 +1026,7 @@ while running:
             print("Going to next level")
         level += 1
         game_over = WON_GAME
+        won_end_gegner = False
         # make sprite images new to get game having differnet colors each time
         Player.color = random.randrange(0,len(player_imges))
         player_mini_img = pygame.transform.scale(player_imges[player.color], (37, 28))
