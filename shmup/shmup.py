@@ -203,7 +203,7 @@ in_end_game_animation = False
 in_end_gegner = False
 end_game_animation_time = pygame.time.get_ticks()
 game_sound_volume = 0.6
-level = 10
+level = 1
 make_game_values_more_difficult(False)
 
 # initialize pygame and create window
