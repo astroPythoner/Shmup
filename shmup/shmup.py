@@ -2,6 +2,7 @@
 # KidsCanCode - Game Development with Pygame video series
 
 # ToDo: Enemies könnten sich schöner Bewegen. Sie sollen nicht aus dem Fenster fliegen, sondern in der Gegend rum schwurren ohne sich dabei zu stoßen.
+# ToDo: Bewegungen hängen manchmal. Alle Bewgungen sollten in Abhängigkeit der Zeit und nicht der Bildschirmgeschwindigkeit sein.
 
 #(http://creativecommons.org/publicdomain/zero/1.0/)
 # Art from Kenney.nl (www.kenney.nl)
