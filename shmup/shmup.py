@@ -271,10 +271,10 @@ def newenemy():
     all_sprites.add(m)
     mobs.add(m)
 
-def draw_shield_bar(surf,x,y):
+def draw_shield_bar(surf,x,y,health):
     BAR_LENGTH = 20
     BAR_HEIGHT = HEIGHT-60
-    fill = (player.health / player_shield) * BAR_HEIGHT
+    fill = (health / player_shield) * BAR_HEIGHT
     if fill < 0:
         fill = 0
     if fill > BAR_HEIGHT:
@@ -284,8 +284,8 @@ def draw_shield_bar(surf,x,y):
     pygame.draw.rect(surf, GREEN, fill_rect)
     pygame.draw.rect(surf, WHITE, outline_rect, 2)
 
-def draw_lives(surf,x,y,img):
-    for i in range(player.lives):
+def draw_lives(surf,x,y,img,lives):
+    for i in range(lives):
         img_rect = img.get_rect()
         img_rect.x = x
         img_rect.y = y - 40 * i
@@ -458,7 +458,7 @@ class Player(pygame.sprite.Sprite):
         self.having_shield = True
         self.shield_time = pygame.time.get_ticks()
         if len(shields) == 0:
-            self.player_shield_sprite = Shield()
+            self.player_shield_sprite = Shield(which_player=self)
             shields.add(self.player_shield_sprite)
             all_sprites.add(self.player_shield_sprite)
 
@@ -793,7 +793,7 @@ class Explosion(pygame.sprite.Sprite):
                 self.rect.center = center
 
 class Shield(pygame.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, which_player):
         pygame.sprite.Sprite.__init__(self)
         self.image = shield_img
         self.image = pygame.transform.scale(self.image, (80,80))
@@ -802,7 +802,7 @@ class Shield(pygame.sprite.Sprite):
         self.radius = 40
 
     def update(self):
-        self.rect.center = player.rect.center
+        self.rect.center = which_player.rect.center
 
 # Load all game graphics
 background = pygame.image.load(path.join(img_dir, "starfield.png")).convert()
@@ -901,17 +901,20 @@ while running:
         powerups = pygame.sprite.Group()
         shields = pygame.sprite.Group()
         players = []
+        players_mini_images = []
         if multiplayer:
             player1 = Player(0)
             player1.start_shield()
             player_mini_img1 = pygame.transform.scale(player_imges[player.color], (37, 28))
             player_mini_img1.set_colorkey(BLACK)
+            players_mini_images.append(player_mini_img1)
             players.append(player1)
             all_sprites.add(player1)
             player2 = Player(1)
             player2.start_shield()
             player_mini_img2 = pygame.transform.scale(player_imges[player.color], (37, 28))
             player_mini_img2.set_colorkey(BLACK)
+            players_mini_images.append(player_mini_img2)
             players.append(player2)
             all_sprites.add(player2)
         else:
@@ -919,6 +922,7 @@ while running:
             player1.start_shield()
             player_mini_img1 = pygame.transform.scale(player_imges[player.color], (37, 28))
             player_mini_img1.set_colorkey(BLACK)
+            players_mini_images.append(player_mini_img1)
             players.append(player1)
             all_sprites.add(player1)
         make_game_values_more_difficult()
@@ -1088,25 +1092,30 @@ while running:
             in_end_game_animation = False
             in_end_gegner = False
 
-    # if the player reached the score for this level the animation at the end of the game starts
-    if score >= needed_score and in_end_game_animation == False and player.alive() and game_over == None:
-        if level%10 == 0:
-            if in_end_gegner and not end_gegner.alive():
-                if debug:
-                    print("Endgegner killed. Showing end game animation")
-                in_end_gegner = False
+    # if the player reached the score for this level the animation at the end of the game starts or the endgegner appears
+    if score >= needed_score and in_end_game_animation == False and game_over == None:
+        all_alive = True
+        for player in players:
+            if not player.alive():
+                all_alive = False
+        if all_alive:
+            if level%10 == 0:
+                if in_end_gegner and not end_gegner.alive():
+                    if debug:
+                        print("Endgegner killed. Showing end game animation")
+                    in_end_gegner = False
+                    in_end_game_animation = True
+                    won_end_gegner = True
+                elif in_end_gegner == False and won_end_gegner == False:
+                    if debug:
+                        print("Endgegner taucht auf")
+                    for i in mobs:
+                        i.kill_when_out_of_screen = True
+                    end_gegner = EndGegner()
+                    all_sprites.add(end_gegner)
+                    in_end_gegner = True
+            else:
                 in_end_game_animation = True
-                won_end_gegner = True
-            elif in_end_gegner == False and won_end_gegner == False:
-                if debug:
-                    print("Endgegner taucht auf")
-                for i in mobs:
-                    i.kill_when_out_of_screen = True
-                end_gegner = EndGegner()
-                all_sprites.add(end_gegner)
-                in_end_gegner = True
-        else:
-            in_end_game_animation = True
     # make the animation at the end of the game if needed
     if in_end_game_animation:
         draw_text(screen, "Gewonnen", 32, WIDTH / 2, HEIGHT / 2.2)
@@ -1143,8 +1152,9 @@ while running:
     if game_over == None:
         all_sprites.draw(screen)
     draw_level(screen,10,5)
-    draw_shield_bar(screen, WIDTH-30, 55)
-    draw_lives(screen, WIDTH - 80, HEIGHT-40, player_mini_img1)
+    for player in players:
+        draw_shield_bar(screen, WIDTH - 30*players.index(player), 55, player.health)
+        draw_lives(screen, WIDTH - 80*players.index(player), HEIGHT-40, players_mini_images[players.index(player)], player.lives)
     # after drawing everything, flip the display
     pygame.display.flip()
 
