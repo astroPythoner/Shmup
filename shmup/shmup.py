@@ -868,7 +868,7 @@ while running:
         draw_end_gegner_bar(screen, 50, 55)
         found_hit = False
         hit_place = (-100,-100)
-        hits = pygame.sprite.spritecollide(end_gegner, bullets, False, True)
+        hits = pygame.sprite.spritecollide(end_gegner, bullets, False)
         if len(hits) > 0:
             end_gegner.mask = pygame.mask.from_surface(end_gegner.image)
             for bullet in bullets:
