@@ -2,6 +2,7 @@
 # KidsCanCode - Game Development with Pygame video series
 
 # ToDo: Enemies könnten sich schöner Bewegen. Sie sollen nicht aus dem Fenster fliegen, sondern in der Gegend rum schwurren ohne sich dabei zu stoßen.
+# ToDo: Bewegungen hängen manchmal. Alle Bewgungen sollten in Abhängigkeit der Zeit und nicht der Bildschirmgeschwindigkeit sein.
 
 #(http://creativecommons.org/publicdomain/zero/1.0/)
 # Art from Kenney.nl (www.kenney.nl)
@@ -203,8 +204,9 @@ in_end_game_animation = False
 in_end_gegner = False
 end_game_animation_time = pygame.time.get_ticks()
 game_sound_volume = 0.6
-level = 10
+level = 1
 make_game_values_more_difficult(False)
+debug = False
 
 # initialize pygame and create window
 pygame.init()
@@ -464,6 +466,7 @@ class Bullet(pygame.sprite.Sprite):
         self.rect.bottom = y
         self.rect.centerx = x
         self.speedy = -bullet_speed
+        self.mask = pygame.mask.from_surface(self.image)
 
     def update(self):
         self.rect.y += self.speedy
@@ -594,7 +597,7 @@ class EndGegner(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(self.image,(350,350))
         self.orig_image = self.image
         self.rect = self.image.get_rect()
-        # plce above the screen
+        # place above the screen
         self.rect.centerx = WIDTH / 2
         self.rect.centery = -100
         #rotation
@@ -611,8 +614,11 @@ class EndGegner(pygame.sprite.Sprite):
         # for enemy sending
         self.last_enemy_entsenden = pygame.time.get_ticks()
         self.anz_enemies_sended = 0
+        # mask for collisions
+        self.mask = None
 
     def update(self):
+        #pygame.draw.rect(screen,RED,self.rect)
         # move into screen
         if self.rect.centery < HEIGHT/4:
             calculated = round((5/((-100-(HEIGHT/4))*(-100-(HEIGHT/4))))*((self.rect.centery-(HEIGHT/4))*(self.rect.centery-(HEIGHT/4))))+1
@@ -826,6 +832,9 @@ while running:
     clock.tick(FPS)
 
     # Process input (events)
+    keystate = pygame.key.get_pressed()
+    if keystate[pygame.K_ESCAPE]:
+        running = False
     for event in pygame.event.get():
         # check for closing window
         if event.type == pygame.QUIT:
@@ -836,45 +845,51 @@ while running:
 
     # check to see if a bullet hit a mob
     if (in_end_game_animation == False and score < needed_score) or (level%10 == 0 and in_end_gegner==True and needed_score>= score):
-        hits = pygame.sprite.groupcollide(mobs, bullets, True, True)
+        hits = pygame.sprite.groupcollide(mobs, bullets, False, True)
         for hit in hits:
-            score += 50 - hit.radius
-            if score > needed_score:
-                score = needed_score
-            random.choice(expl_sounds).play()
-            expl = Explosion(hit.rect.center, 'lg')
-            all_sprites.add(expl)
-            if random.random() > power_up_percent:
-                pow = Pow(hit.rect.center)
-                all_sprites.add(pow)
-                powerups.add(pow)
-            if level % 5 == 0 and not (level%10 == 0 and in_end_gegner==True and needed_score>= score):
-                newenemy()
-            elif level%5 != 0:
-                newmob()
+            if in_end_gegner == False or (in_end_gegner and ((hit.rect.centerx > end_gegner.rect.centerx+150 or hit.rect.centerx < end_gegner.rect.centerx-150) or hit.rect.centery > end_gegner.rect.centery+150)):
+                hit.kill()
+                score += 50 - hit.radius
+                if score > needed_score:
+                    score = needed_score
+                random.choice(expl_sounds).play()
+                expl = Explosion(hit.rect.center, 'lg')
+                all_sprites.add(expl)
+                if random.random() > power_up_percent:
+                    pow = Pow(hit.rect.center)
+                    all_sprites.add(pow)
+                    powerups.add(pow)
+                if level % 5 == 0 and not (level%10 == 0 and in_end_gegner==True and needed_score>= score):
+                    newenemy()
+                elif level%5 != 0:
+                    newmob()
 
     # check to see if a bullet hit the end gegner
     if level % 10 == 0 and in_end_gegner == True and needed_score >= score:
         draw_end_gegner_bar(screen, 50, 55)
         found_hit = False
         hit_place = (-100,-100)
-        for bullet in bullets:
-            hit = pygame.sprite.collide_mask(end_gegner, bullet)
-            if hit is not None:
-                found_hit = True
-                hit_place = hit
-                bullet.kill()
-                end_gegner.health -= 1
-                if end_gegner.health <= 0:
-                    print("end_gegner is dead "+str(end_gegner.alive()))
-                    end_gegner.kill()
-                random.choice(expl_sounds).play()
-                expl = Explosion(hit, 'lg')
-                all_sprites.add(expl)
-        if found_hit and random.random() > power_up_percent:
-            pow = Pow(hit_place)
-            all_sprites.add(pow)
-            powerups.add(pow)
+        hits = pygame.sprite.spritecollide(end_gegner, bullets, False)
+        if len(hits) > 0:
+            end_gegner.mask = pygame.mask.from_surface(end_gegner.image)
+            for bullet in bullets:
+                hit = pygame.sprite.collide_mask(end_gegner, bullet)
+                if hit is not None:
+                    found_hit = True
+                    hit_place = hit
+                    bullet.kill()
+                    end_gegner.health -= 1
+                    if end_gegner.health <= 0:
+                        if debug:
+                            print("end_gegner is dead "+str(end_gegner.alive()))
+                        end_gegner.kill()
+                    random.choice(expl_sounds).play()
+                    expl = Explosion((hit[0]+end_gegner.rect.x,hit[1]+end_gegner.rect.y), 'lg')
+                    all_sprites.add(expl)
+            if found_hit and random.random() > power_up_percent+(1-power_up_percent)*0.8:
+                pow = Pow((hit_place[0]+end_gegner.rect.x,hit_place[1]+end_gegner.rect.y))
+                all_sprites.add(pow)
+                powerups.add(pow)
 
     # check to see if a enemyshot hit the player
     if (in_end_game_animation == False and score < needed_score and level%5 == 0) or (level%10 == 0 and in_end_gegner==True and needed_score >= score):
@@ -885,6 +900,8 @@ while running:
                 expl = Explosion(hit.rect.center, 'sm')
                 all_sprites.add(expl)
                 if player.health <= 0:
+                    if debug:
+                        print("player killed by shoot")
                     player_die_sound.play()
                     death_explosion = Explosion(player.rect.center, 'player')
                     all_sprites.add(death_explosion)
@@ -892,10 +909,13 @@ while running:
                     player.lives -= 1
                     player.health = player_shield
                     player.start_shield()
+                else:
+                    random.choice(expl_sounds).play()
         else:
             hits = pygame.sprite.spritecollide(player.player_shield_sprite, enemy_bullets, True)
             for hit in hits:
                 expl = Explosion(hit.rect.center, 'sm')
+                random.choice(expl_sounds).play()
                 all_sprites.add(expl)
 
     # check to see if a mob hit the player
@@ -911,6 +931,8 @@ while running:
                 else:
                     newmob()
                 if player.health <= 0:
+                    if debug:
+                        print("player killed by mob")
                     player_die_sound.play()
                     death_explosion = Explosion(player.rect.center, 'player')
                     all_sprites.add(death_explosion)
@@ -918,10 +940,13 @@ while running:
                     player.lives -= 1
                     player.health = player_shield
                     player.start_shield()
+                else:
+                    random.choice(expl_sounds).play()
         else:
             hits = pygame.sprite.spritecollide(player.player_shield_sprite, mobs, True, pygame.sprite.collide_circle)
             for hit in hits:
                 expl = Explosion(hit.rect.center, 'sm')
+                random.choice(expl_sounds).play()
                 all_sprites.add(expl)
                 if level%5 == 0:
                     newenemy()
@@ -946,6 +971,8 @@ while running:
 
     # if the player died and the explosion has finished playing
     if player.lives == 0 and not death_explosion.alive():
+        if debug:
+            print("player has no lives anymore. Game ends")
         game_over = LOST_GAME
         in_end_game_animation = False
         in_end_gegner = False
@@ -954,9 +981,13 @@ while running:
     if score >= needed_score and in_end_game_animation == False and player.alive() and game_over == None:
         if level%10 == 0:
             if in_end_gegner and not end_gegner.alive():
+                if debug:
+                    print("Endgegner killed. Showing end game animation")
                 in_end_gegner = False
                 in_end_game_animation = True
             elif in_end_gegner == False:
+                if debug:
+                    print("Endgegner taucht auf")
                 for i in mobs:
                     i.kill_when_out_of_screen = True
                 end_gegner = EndGegner()
@@ -976,9 +1007,13 @@ while running:
             if len(mobs.sprites()) == 0:
                 in_end_game_animation = False
         elif len(mobs) == 0:
+            if debug:
+                print("All mobs exploded game ends")
             in_end_game_animation = False
     # when the animation at the and of the game is finished the level ends and player goes to the next one
     if in_end_game_animation == False and in_end_gegner == False and score >= needed_score and end_game_animation_time+700 < pygame.time.get_ticks() and game_over==None:
+        if debug:
+            print("Going to next level")
         level += 1
         game_over = WON_GAME
         # make sprite images new to get game having differnet colors each time
