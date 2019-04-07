@@ -217,10 +217,12 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Shmup!")
 clock = pygame.time.Clock()
 #inittialize joysticks and buttons
-for x in range(pygame.joystick.get_count()):
-    pygame_joystick = pygame.joystick.Joystick(x)
+my_joystick = JoystickPins(None)
+for joy in range(pygame.joystick.get_count()):
+    pygame_joystick = pygame.joystick.Joystick(joy)
     pygame_joystick.init()
     my_joystick = JoystickPins(pygame_joystick)
+
 
 font_name = pygame.font.match_font('arial')
 def draw_text(surf, text, size, x, y):

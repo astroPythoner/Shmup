@@ -40,10 +40,22 @@ joystick_mappings = {
             },
         }
 
+class _NoStick():
+    def get_name(self):
+        return "No Stick"
+    def get_button(self, btn):
+        return False
+    def get_axis(self, axis):
+        return 0
+
 class JoystickPins():
     def __init__(self, joystick, mapping = None):
-        self.joystick = joystick
-        self.name = joystick.get_name().strip()
+        self.no_stick = joystick is None
+        if self.no_stick:
+            self.joystick = _NoStick()
+        else:
+            self.joystick = joystick
+        self.name = self.joystick.get_name().strip()
         if mapping is not None:
             self.mapping = mapping
         elif self.name in joystick_mappings.keys():
@@ -83,13 +95,13 @@ class JoystickPins():
         return self._axis_y
 
     def get_A(self):
-        return self.joystick.get_button(self._A)
+        return self.joystick.get_button(self.A)
     def get_B(self):
-        return self.joystick.get_button(self._B)
+        return self.joystick.get_button(self.B)
     def get_X(self):
-        return self.joystick.get_button(self._X)
+        return self.joystick.get_button(self.X)
     def get_Y(self):
-        return self.joystick.get_button(self._Y)
+        return self.joystick.get_button(self.Y)
     def get_select(self):
         return self.joystick.get_button(self._select)
     def get_start(self):
@@ -106,3 +118,15 @@ class JoystickPins():
         return self.joystick.get_axis(self._axis_y) < -0.9
     def get_axis_down(self):
         return self.joystick.get_axis(self._axis_y) >  0.9
+    def get_axis(self, axis):
+        val = self.get_axis_x(axis)
+        result = 0
+        if val < -0.9:
+            result = -1
+        elif val > 0.9:
+            result = 1
+        return result
+    def get_axis_x(self):
+        val = self.get_axis(self._axis_x)
+    def get_axis_y(self):
+        val = self.get_axis(self._axis_y)
