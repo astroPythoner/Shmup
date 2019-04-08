@@ -12,7 +12,8 @@ import pygame
 import random
 from os import path
 from os import listdir
-from joystickpins import JoystickPins
+import time
+from joystickpins import JoystickPins, KeyboardStick
 
 img_dir = path.join(path.dirname(__file__), 'img')
 snd_dir = path.join(path.dirname(__file__), 'snd')
@@ -30,6 +31,8 @@ RIGHT = "right"
 SHOOT = "shoot"
 ENEMY = "enemy"
 ESC = "escape"
+ALL = "all"
+START = "start"
 
 #game_variables
 player_lives = 4
@@ -55,7 +58,7 @@ end_gegner_rotation_speed = 1
 end_gegner_health = 125
 needed_score = 100
 
-def make_game_values_more_difficult(player_defined = True):
+def make_game_values_more_difficult():
     global end_gegner_bullet_time,end_gegner_enemy_send_time,end_gegner_mode_change_time,end_gegner_anz_enemis_send,end_gegner_rotation_speed,end_gegner_health,player_lives,player_speed,mob_speed_x,mob_speed_y,anz_mobs,bullet_speed,power_up_speed,power_up_percent,enemy_bullet_speed,player_shield,shield_power,player_shoot_delay,time_hidden_after_kill,enemy_bullet_time,needed_score
     if level <= 10:
         end_gegner_bullet_time = 600
@@ -116,8 +119,6 @@ def make_game_values_more_difficult(player_defined = True):
 
     if level < 15:
         player_lives = 4
-        if player_defined:
-            player.lives = 4
         player_speed = 8
         mob_speed_x[0] = -4
         mob_speed_x[1] = 4
@@ -130,8 +131,6 @@ def make_game_values_more_difficult(player_defined = True):
         enemy_bullet_speed = 5
     elif level < 30:
         player_lives = 3
-        if player_defined:
-            player.lives = 3
         player_speed = 7
         mob_speed_x[0] = -3
         mob_speed_x[1] = 3
@@ -144,8 +143,6 @@ def make_game_values_more_difficult(player_defined = True):
         enemy_bullet_speed = 6
     elif level < 50:
         player_lives = 2
-        if player_defined:
-            player.lives = 2
         player_speed = 6
         mob_speed_x[0] = -2
         mob_speed_x[1] = 2
@@ -158,8 +155,6 @@ def make_game_values_more_difficult(player_defined = True):
         enemy_bullet_speed = 7
     else:
         player_lives = 2
-        if player_defined:
-            player.lives = 2
         player_speed = 5
         mob_speed_x[0] = -2
         mob_speed_x[1] = 2
@@ -208,8 +203,8 @@ in_end_gegner = False
 won_end_gegner = False
 end_game_animation_time = pygame.time.get_ticks()
 game_sound_volume = 0.6
-level = 10
-make_game_values_more_difficult(False)
+level = 1
+make_game_values_more_difficult()
 debug = False
 
 # initialize pygame and create window
@@ -218,20 +213,28 @@ pygame.mixer.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Shmup!")
 clock = pygame.time.Clock()
+
 #inittialize joysticks and buttons
-my_joystick = JoystickPins(None)
-all_joysticks = []
+all_joysticks = [JoystickPins(KeyboardStick())]
 for joy in range(pygame.joystick.get_count()):
     pygame_joystick = pygame.joystick.Joystick(joy)
     pygame_joystick.init()
-    all_joysticks.append(JoystickPins(pygame_joystick))
+    my_joystick = JoystickPins(pygame_joystick)
+    all_joysticks.append(my_joystick)
+    print("found_joystick: "+my_joystick.get_name())
 
 font_name = pygame.font.match_font('arial')
-def draw_text(surf, text, size, x, y, color = WHITE):
+def draw_text(surf, text, size, x, y, color = WHITE, rect_place = "oben_mitte"):
     font = pygame.font.Font(font_name, size)
     text_surface = font.render(text, True, color)
     text_rect = text_surface.get_rect()
-    text_rect.midtop = (x, y)
+    if rect_place == "oben_mitte":
+        text_rect.midtop = (x, y)
+    elif rect_place == "oben_links":
+        text_rect.x = x
+        text_rect.y = y
+    elif rect_place == "oben_rechts":
+        text_rect.topright = (x,y)
     surf.blit(text_surface, text_rect)
 
 def load_graphics_from_file_array(file_array,dir,color_key=None,convert_aplha=False,as_dict=False):
@@ -261,15 +264,176 @@ def load_graphics_from_file_array(file_array,dir,color_key=None,convert_aplha=Fa
 
     return return_images
 
-def newmob():
-    m = Mob()
-    all_sprites.add(m)
-    mobs.add(m)
+def check_key_pressed(check_for = ALL,joystick_num="both"):
+    if multiplayer:
+        if joystick_num == "both":
+            for joystick in all_joysticks:
+                if check_for == LEFT:
+                    if joystick.get_axis_left() or joystick.get_shoulder_left():
+                        return True
+                if check_for == RIGHT:
+                    if joystick.get_axis_right() or joystick.get_shoulder_right():
+                        return True
+                if check_for == SHOOT:
+                    if joystick.get_A() or joystick.get_B():
+                        return True
+                if check_for == ESC:
+                    if joystick.get_select() and joystick.get_start():
+                        return True
+                if check_for == START:
+                    if joystick.get_start():
+                        return True
+                if check_for == ALL:
+                    if joystick.get_A() or joystick.get_B() or joystick.get_X() or joystick.get_Y() or joystick.get_start() or joystick.get_shoulder_left() or joystick.get_shoulder_right() or joystick.get_axis_left() or joystick.get_axis_right() or joystick.get_axis_up() or joystick.get_axis_down():
+                        return True
+        else:
+            if check_for == LEFT:
+                if all_joysticks[joystick_num].get_axis_left() or all_joysticks[joystick_num].get_shoulder_left():
+                    return True
+            if check_for == RIGHT:
+                if all_joysticks[joystick_num].get_axis_right() or all_joysticks[joystick_num].get_shoulder_right():
+                    return True
+            if check_for == SHOOT:
+                if all_joysticks[joystick_num].get_A() or all_joysticks[joystick_num].get_B():
+                    return True
+            if check_for == ESC:
+                if all_joysticks[joystick_num].get_select() and all_joysticks[joystick_num].get_start():
+                    return True
+            if check_for == START:
+                if all_joysticks[joystick_num].get_start():
+                    return True
+            if check_for == ALL:
+                if all_joysticks[joystick_num].get_A() or all_joysticks[joystick_num].get_B() or all_joysticks[joystick_num].get_X() or all_joysticks[joystick_num].get_Y() or all_joysticks[joystick_num].get_start() or all_joysticks[joystick_num].get_shoulder_left() or all_joysticks[joystick_num].get_shoulder_right() or all_joysticks[joystick_num].get_axis_left() or all_joysticks[joystick_num].get_axis_right() or all_joysticks[joystick_num].get_axis_up() or all_joysticks[joystick_num].get_axis_down():
+                    return True
+    else:
+        for joystick in all_joysticks:
+            if check_for == LEFT:
+                if joystick.get_axis_left() or joystick.get_shoulder_left():
+                    return True
+            if check_for == RIGHT:
+                if joystick.get_axis_right() or joystick.get_shoulder_right():
+                    return True
+            if check_for == SHOOT:
+                if joystick.get_A() or joystick.get_B():
+                    return True
+            if check_for == ESC:
+                if joystick.get_select() and joystick.get_start():
+                    return True
+            if check_for == START:
+                if joystick.get_start():
+                    return True
+            if check_for == ALL:
+                if joystick.get_A() or joystick.get_B() or joystick.get_X() or joystick.get_Y() or joystick.get_start() or joystick.get_shoulder_left() or joystick.get_shoulder_right() or joystick.get_axis_left() or joystick.get_axis_right() or joystick.get_axis_up() or joystick.get_axis_down():
+                    return True
+    return False
 
-def newenemy():
-    m = Enemy()
-    all_sprites.add(m)
-    mobs.add(m)
+def wait_for_joystick_confirm(surf, num_joysticks):
+    global multiplayer, all_joysticks
+
+    # wait to show selection screen
+    show_on_screen(surf, None, with_waiting=False, diyplay_flip=False)
+    draw_text(surf, "Wähle deine Kontroller", 32, WIDTH / 2, HEIGHT / 2.2)
+    for controller in all_joysticks:
+        draw_text(surf, controller.get_name(), 28, WIDTH / 2 - 10, HEIGHT / 1.9 + 35 * all_joysticks.index(controller), rect_place="oben_rechts")
+    pygame.display.flip()
+    time.sleep(0.5)
+
+    # Start selecting
+    selected_controllers = []
+    selected_controller_num = 0
+    last_switch = pygame.time.get_ticks()
+    while len(selected_controllers) < num_joysticks:
+        # Don't make too fast
+        clock.tick(FPS)
+        # Draw screen
+        show_on_screen(surf, None, with_waiting=False, diyplay_flip=False)
+        draw_text(surf, "Wähle deine Kontroller", 32, WIDTH / 2, HEIGHT / 2.2)
+        for controller in all_joysticks:
+            if all_joysticks.index(controller) == selected_controller_num:
+                draw_text(surf, controller.get_name(), 30, WIDTH / 2 -10, HEIGHT / 1.9 + 35*all_joysticks.index(controller), rect_place="oben_rechts", color = RED)
+            else:
+                draw_text(surf, controller.get_name(), 28, WIDTH / 2 -10, HEIGHT / 1.9 + 35*all_joysticks.index(controller), rect_place="oben_rechts")
+            if controller in selected_controllers:
+                draw_text(surf, "bestätigt", 18, WIDTH / 2 + 10, HEIGHT / 1.9 + 8 + 35 * all_joysticks.index(controller), color = GREEN, rect_place="oben_links")
+            else:
+                draw_text(surf, "nicht bestätigt", 18, WIDTH / 2 + 10, HEIGHT / 1.9 + 8 + 35*all_joysticks.index(controller), rect_place="oben_links")
+        pygame.display.flip()
+        # check quit
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+        # check if selection changed
+        if check_key_pressed(LEFT) and last_switch + 300 < pygame.time.get_ticks():
+            last_switch = pygame.time.get_ticks()
+            selected_controller_num -= 1
+            if selected_controller_num < 0:
+                selected_controller_num = 0
+        if check_key_pressed(RIGHT) and last_switch + 300 < pygame.time.get_ticks():
+            last_switch = pygame.time.get_ticks()
+            selected_controller_num += 1
+            if selected_controller_num >= len(all_joysticks):
+                selected_controller_num = len(all_joysticks) -1
+        if check_key_pressed(SHOOT):
+            if all_joysticks[selected_controller_num] not in selected_controllers:
+                selected_controllers.append(all_joysticks[selected_controller_num])
+    if len(selected_controllers) == num_joysticks:
+        all_joysticks = selected_controllers
+        return True
+    else:
+        return False
+
+def show_on_screen(surf, calling_reason, selected=None, with_waiting=True, diyplay_flip = True):
+    global level
+
+    surf.blit(background, background_rect)
+
+    if calling_reason == LOST_GAME:
+        draw_text(surf, "Verloren", 32, WIDTH / 2, HEIGHT / 2.2)
+        draw_text(surf, "Versuche es gleich nochmal", 28, WIDTH / 2, HEIGHT / 1.8)
+    elif calling_reason == WON_GAME:
+        draw_text(surf, "Gewonnen", 32, WIDTH / 2, HEIGHT / 2.2)
+        draw_text(surf, "Schaffst du das nächste Level auch?", 28, WIDTH / 2, HEIGHT / 1.8)
+    elif calling_reason == START_GAME:
+        draw_text(surf, "Shut them up!", 32, WIDTH / 2, HEIGHT / 2.2)
+        if selected == 0:
+            draw_text(surf, "Multi player", 34, WIDTH / 2 + 100, HEIGHT / 1.8, color=RED)
+            draw_text(surf, "Single player", 25, WIDTH / 2 - 100, HEIGHT / 1.8 + 8)
+        else:
+            draw_text(surf, "Multi player", 25, WIDTH / 2 + 100, HEIGHT / 1.8 + 8)
+            draw_text(surf, "Single player", 34, WIDTH / 2 - 100, HEIGHT / 1.8, color=RED)
+
+    draw_text(surf, "SHMUP!", 64, WIDTH / 2, HEIGHT / 6.5)
+    draw_text(surf, "Level: " + str(level), 45, WIDTH / 2, HEIGHT / 3.5)
+    draw_text(surf, "A/D oder Joystick zum Bewegen, Pfeiltaste oder A/B zum schießen", 20, WIDTH / 2, HEIGHT * 3 / 4)
+    draw_text(surf, "Drücke Start oder Leertaste zum Starten", 15, WIDTH / 2, HEIGHT * 4 / 5)
+
+    if diyplay_flip:
+        pygame.display.flip()
+
+    last_switch = pygame.time.get_ticks()
+    if with_waiting:
+        waiting = True
+        while waiting:
+            clock.tick(FPS)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+            if check_key_pressed(START):
+                waiting = False
+            if check_key_pressed(LEFT) and last_switch + 300 < pygame.time.get_ticks():
+                last_switch = pygame.time.get_ticks()
+                level -= 1
+                if level < 1:
+                    level = 1
+                make_game_values_more_difficult()
+                waiting = False
+                show_on_screen(surf,calling_reason,selected,with_waiting,diyplay_flip)
+            if check_key_pressed(RIGHT) and last_switch + 300 < pygame.time.get_ticks():
+                last_switch = pygame.time.get_ticks()
+                level += 1
+                make_game_values_more_difficult()
+                waiting = False
+                show_on_screen(surf, calling_reason, selected, with_waiting, diyplay_flip)
 
 def draw_shield_bar(surf,x,y,health):
     BAR_LENGTH = 20
@@ -292,7 +456,7 @@ def draw_lives(surf,x,y,img,lives):
         surf.blit(img, img_rect)
 
 def draw_level(surf,x,y):
-    draw_text(surf, str(level), 50, x+10, y-5)
+    draw_text(surf, str(level), 50, x-4, y-4, rect_place="oben_links")
     BAR_LENGTH = 20
     BAR_HEIGHT = HEIGHT -60
     fill = (score/needed_score) * BAR_HEIGHT
@@ -318,88 +482,24 @@ def draw_end_gegner_bar(surf,x,y):
     pygame.draw.rect(surf, YELLOW, fill_rect)
     pygame.draw.rect(surf, WHITE, outline_rect, 2)
 
-def show_on_screen(surf,calling_reason, selected = None, with_waiting = True):
-    surf.blit(background, background_rect)
+def newmob():
+    m = Mob()
+    all_sprites.add(m)
+    mobs.add(m)
 
-    if calling_reason == LOST_GAME:
-        draw_text(surf, "Verloren", 32, WIDTH / 2, HEIGHT / 2.2)
-        draw_text(surf, "Verusuche es gleich nochmal", 28, WIDTH / 2, HEIGHT / 1.8)
-    elif calling_reason == WON_GAME:
-        draw_text(surf, "Gewonnen", 32, WIDTH / 2, HEIGHT / 2.2)
-        draw_text(surf, "Schaffst du das nächste Level auch?", 28, WIDTH / 2, HEIGHT / 1.8)
-    elif calling_reason == START_GAME:
-        draw_text(surf, "Shut them up!", 32, WIDTH / 2, HEIGHT / 2.2)
-        if selected == 0:
-            draw_text(surf, "Multi player", 34, WIDTH / 2 + 100, HEIGHT / 1.8, color = RED)
-            draw_text(surf, "Single player", 25, WIDTH / 2 - 100, HEIGHT / 1.8 + 8)
-        else:
-            draw_text(surf, "Multi player", 25, WIDTH / 2 + 100, HEIGHT / 1.8 + 8)
-            draw_text(surf, "Single player", 34, WIDTH / 2 - 100, HEIGHT / 1.8, color = RED)
-
-    draw_text(surf, "SHMUP!", 64, WIDTH / 2, HEIGHT / 6.5)
-    draw_text(surf, "Level: "+str(level), 45, WIDTH / 2, HEIGHT / 3.5)
-    draw_text(surf, "Pfeiltasten oder Joystick zum Bewegen, Leertaste oder A/B zum schießen", 20,WIDTH / 2, HEIGHT * 3/4)
-    draw_text(surf, "Drücke ein ebeliebige Taste zum starten", 15, WIDTH / 2, HEIGHT * 4/5)
-
-    pygame.display.flip()
-    if with_waiting:
-        waiting = True
-        while waiting:
-            clock.tick(FPS)
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                if event.type == pygame.JOYBUTTONUP:
-                    waiting = False
-
-def check_key_pressed(check_for,joystick_num="both"):
-    if multiplayer:
-        if joystick_num == "both":
-            for joystick in all_joysticks:
-                if check_for == LEFT:
-                    if joystick.get_axis_left() or joystick.get_shoulder_left():
-                        return True
-                if check_for == RIGHT:
-                    if joystick.get_axis_right() or joystick.get_shoulder_right():
-                        return True
-                if check_for == SHOOT:
-                    if joystick.get_A() or joystick.get_B():
-                        return True
-                if check_for == ESC:
-                    if joystick.get_select() and joystick.get_start():
-                        return True
-        else:
-            if check_for == LEFT:
-                if all_joysticks[joystick_num].get_axis_left() or all_joysticks[joystick_num].get_shoulder_left():
-                    return True
-            if check_for == RIGHT:
-                if all_joysticks[joystick_num].get_axis_right() or all_joysticks[joystick_num].get_shoulder_right():
-                    return True
-            if check_for == SHOOT:
-                if all_joysticks[joystick_num].get_A() or all_joysticks[joystick_num].get_B():
-                    return True
-            if check_for == ESC:
-                if all_joysticks[joystick_num].get_select() and all_joysticks[joystick_num].get_start():
-                    return True
-    else:
-        if check_for == LEFT:
-            if all_joysticks[0].get_axis_left() or all_joysticks[0].get_shoulder_left():
-                return True
-        if check_for == RIGHT:
-            if all_joysticks[0].get_axis_right() or all_joysticks[0].get_shoulder_right():
-                return True
-        if check_for == SHOOT:
-            if all_joysticks[0].get_A() or all_joysticks[0].get_B():
-                return True
-        if check_for == ESC:
-            if all_joysticks[0].get_select() and all_joysticks[0].get_start():
-                return True
-    return False
+def newenemy():
+    m = Enemy()
+    all_sprites.add(m)
+    mobs.add(m)
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, player_num = 0):
+    def __init__(self, player_num = 0, color = None):
         pygame.sprite.Sprite.__init__(self)
-        self.color = random.randrange(0,len(player_imges))
+        self.player_num = player_num
+        if color == None:
+            self.color = random.randrange(0,len(player_imges))
+        else:
+            self.color = color
         self.image = pygame.transform.scale(player_imges[self.color], (50, 38))
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
@@ -409,8 +509,10 @@ class Player(pygame.sprite.Sprite):
         self.rect.bottom = HEIGHT - 10
         self.speedx = 0
         self.health = player_shield
-        self.having_shield = True
         self.shield_time = pygame.time.get_ticks()
+        self.having_shield = False
+        self.player_shield_sprite = None
+        self.start_shield()
         self.shoot_delay = player_shoot_delay
         self.last_shot = pygame.time.get_ticks()
         self.lives = player_lives
@@ -418,7 +520,6 @@ class Player(pygame.sprite.Sprite):
         self.hide_timer = pygame.time.get_ticks()
         self.power = 1
         self.power_time = pygame.time.get_ticks()
-        self.player_shield_sprite = Shield()
 
     def update(self):
         # timeout for powerups
@@ -437,12 +538,13 @@ class Player(pygame.sprite.Sprite):
             self.rect.centerx = WIDTH / 2
             self.rect.bottom = HEIGHT - 10
 
+        # move
         self.speedx = 0
-        if check_key_pressed(LEFT,0):
+        if check_key_pressed(LEFT,self.player_num):
             self.speedx = -player_speed
-        if check_key_pressed(RIGHT,0):
+        if check_key_pressed(RIGHT,self.player_num):
             self.speedx = player_speed
-        if check_key_pressed(SHOOT,0):
+        if check_key_pressed(SHOOT,self.player_num):
             self.shoot()
         self.rect.x += self.speedx
         if self.rect.right > WIDTH:
@@ -455,61 +557,62 @@ class Player(pygame.sprite.Sprite):
         self.power_time = pygame.time.get_ticks()
 
     def start_shield(self):
-        self.having_shield = True
         self.shield_time = pygame.time.get_ticks()
-        if len(shields) == 0:
-            self.player_shield_sprite = Shield(which_player=self)
+        if self.having_shield == False:
+            self.having_shield = True
+            self.player_shield_sprite = Shield(self)
             shields.add(self.player_shield_sprite)
             all_sprites.add(self.player_shield_sprite)
 
     def shoot(self):
-        now = pygame.time.get_ticks()
-        if now - self.last_shot > self.shoot_delay:
-            self.last_shot = now
-            # wenn du gegen den end gegner spielst hast du nicht so gute Schüsse, da die Berechnung der Treffer bei vielen SChüssen zu lange braucht
-            if in_end_gegner and self.power > 2:
-                self.power = 2
-            if self.power == 1:
-                bullet = Bullet(self.rect.centerx, self.rect.top)
-                all_sprites.add(bullet)
-                bullets.add(bullet)
-                shoot_sound.play()
-            if self.power >= 2:
-                bullet1 = Bullet(self.rect.left, self.rect.centery)
-                bullet2 = Bullet(self.rect.right, self.rect.centery)
-                all_sprites.add(bullet1)
-                all_sprites.add(bullet2)
-                bullets.add(bullet1)
-                bullets.add(bullet2)
-                shoot_sound.play()
-            if self.power >= 3:
-                bullet1 = Bullet(self.rect.left, self.rect.centery)
-                bullet2 = Bullet(self.rect.right, self.rect.centery)
-                bullet3 = Bullet(self.rect.centerx, self.rect.centery)
-                all_sprites.add(bullet1)
-                all_sprites.add(bullet2)
-                all_sprites.add(bullet3)
-                bullets.add(bullet1)
-                bullets.add(bullet2)
-                bullets.add(bullet3)
-                shoot_sound.play()
-            if self.power >= 4:
-                bullet1 = Bullet(self.rect.left, self.rect.centery)
-                bullet2 = Bullet(self.rect.right, self.rect.centery)
-                bullet3 = Bullet(self.rect.centerx, self.rect.centery)
-                bullet4 = SmallBullet(self.rect.left, self.rect.centery, LEFT)
-                bullet5 = SmallBullet(self.rect.right, self.rect.centery, RIGHT)
-                all_sprites.add(bullet1)
-                all_sprites.add(bullet2)
-                all_sprites.add(bullet3)
-                all_sprites.add(bullet4)
-                all_sprites.add(bullet5)
-                bullets.add(bullet1)
-                bullets.add(bullet2)
-                bullets.add(bullet3)
-                bullets.add(bullet4)
-                bullets.add(bullet5)
-                shoot_sound.play()
+        if player.hidden == False:
+            now = pygame.time.get_ticks()
+            if now - self.last_shot > self.shoot_delay:
+                self.last_shot = now
+                # wenn du gegen den end gegner spielst hast du nicht so gute Schüsse, da die Berechnung der Treffer bei vielen SChüssen zu lange braucht
+                if in_end_gegner and self.power > 2:
+                    self.power = 2
+                if self.power == 1:
+                    bullet = Bullet(self.rect.centerx, self.rect.top,self)
+                    all_sprites.add(bullet)
+                    bullets.add(bullet)
+                    shoot_sound.play()
+                if self.power >= 2:
+                    bullet1 = Bullet(self.rect.left, self.rect.centery,self)
+                    bullet2 = Bullet(self.rect.right, self.rect.centery,self)
+                    all_sprites.add(bullet1)
+                    all_sprites.add(bullet2)
+                    bullets.add(bullet1)
+                    bullets.add(bullet2)
+                    shoot_sound.play()
+                if self.power >= 3:
+                    bullet1 = Bullet(self.rect.left, self.rect.centery,self)
+                    bullet2 = Bullet(self.rect.right, self.rect.centery,self)
+                    bullet3 = Bullet(self.rect.centerx, self.rect.centery,self)
+                    all_sprites.add(bullet1)
+                    all_sprites.add(bullet2)
+                    all_sprites.add(bullet3)
+                    bullets.add(bullet1)
+                    bullets.add(bullet2)
+                    bullets.add(bullet3)
+                    shoot_sound.play()
+                if self.power >= 4:
+                    bullet1 = Bullet(self.rect.left, self.rect.centery,self)
+                    bullet2 = Bullet(self.rect.right, self.rect.centery,self)
+                    bullet3 = Bullet(self.rect.centerx, self.rect.centery,self)
+                    bullet4 = SmallBullet(self.rect.left, self.rect.centery, LEFT,self)
+                    bullet5 = SmallBullet(self.rect.right, self.rect.centery, RIGHT,self)
+                    all_sprites.add(bullet1)
+                    all_sprites.add(bullet2)
+                    all_sprites.add(bullet3)
+                    all_sprites.add(bullet4)
+                    all_sprites.add(bullet5)
+                    bullets.add(bullet1)
+                    bullets.add(bullet2)
+                    bullets.add(bullet3)
+                    bullets.add(bullet4)
+                    bullets.add(bullet5)
+                    shoot_sound.play()
 
     def hide(self):
         # hide the player temporarily
@@ -518,9 +621,9 @@ class Player(pygame.sprite.Sprite):
         self.rect.center = (WIDTH / 2, HEIGHT + 200)
 
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, x, y, which_player):
         pygame.sprite.Sprite.__init__(self)
-        self.image = big_bullet_imges[player.color]
+        self.image = big_bullet_imges[which_player.color]
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
         self.rect.bottom = y
@@ -535,9 +638,9 @@ class Bullet(pygame.sprite.Sprite):
             self.kill()
 
 class SmallBullet(pygame.sprite.Sprite):
-    def __init__(self, x, y, direction):
+    def __init__(self, x, y, direction, which_player):
         pygame.sprite.Sprite.__init__(self)
-        self.image = small_bullet_imges[player.color]
+        self.image = small_bullet_imges[which_player.color]
         self.image = pygame.transform.scale(self.image, (10, 10))
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
@@ -800,9 +903,10 @@ class Shield(pygame.sprite.Sprite):
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
         self.radius = 40
+        self.which_player = which_player
 
     def update(self):
-        self.rect.center = which_player.rect.center
+        self.rect.center = self.which_player.rect.center
 
 # Load all game graphics
 background = pygame.image.load(path.join(img_dir, "starfield.png")).convert()
@@ -857,42 +961,62 @@ pygame.mixer.music.play(loops=-1)
 meteor_images = random.choice([brown_meteor_images,grey_meteor_images])
 enemy_color = random.choice(enemy_colors)
 
+# Beim Multi-player haben die beiden Spieler feste Farben, aber nicht die gleichen
+player_color1 = random.randrange(0,len(player_imges))
+player_color2 = random.randrange(0,len(player_imges))
+while player_color1 == player_color2:
+    player_color2 = random.randrange(0,len(player_imges))
+
 # Multi-player-select
 selected = 1
 waiting = True
+last_switch = pygame.time.get_ticks()
 while waiting:
+    clock.tick(FPS)
     show_on_screen(screen, game_over, selected, with_waiting=False)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
-        if event.type == pygame.JOYBUTTONDOWN or event.type == pygame.JOYAXISMOTION:
-            if check_key_pressed(LEFT) or check_key_pressed(RIGHT):
+        if check_key_pressed(LEFT) or check_key_pressed(RIGHT):
+            if last_switch + 300 < pygame.time.get_ticks():
+                last_switch = pygame.time.get_ticks()
                 selected += 1
                 if selected > 1:
                     selected = 0
-            elif check_key_pressed(SHOOT) or check_key_pressed(ESC):
-                if selected == 1:
-                    if len(all_joysticks) == 1:
-                        waiting = False
-                        end_game = None
-                        multiplayer = False
-                    else:
-                        print("to many joysticks")
-                elif selected == 0:
-                    if len(all_joysticks) < 2:
-                        print("to less joysticks")
-                    if len(all_joysticks) == 2:
-                        waiting = False
-                        end_game = None
-                        multiplayer = True
-                    if len(all_joysticks) > 2:
-                        print("to many joysticks")
+        if check_key_pressed(START):
+            if selected == 1:
+                if wait_for_joystick_confirm(screen, 1):
+                    waiting = False
+                    end_game = None
+                    multiplayer = False
+                else:
+                    all_joysticks = [JoystickPins(KeyboardStick())]
+                    for joy in range(pygame.joystick.get_count()):
+                        pygame_joystick = pygame.joystick.Joystick(joy)
+                        pygame_joystick.init()
+                        my_joystick = JoystickPins(pygame_joystick)
+                        all_joysticks.append(my_joystick)
+                        print("found_joystick: " + my_joystick.get_name())
+            elif selected == 0:
+                if wait_for_joystick_confirm(screen, 2):
+                    waiting = False
+                    end_game = None
+                    multiplayer = True
+                else:
+                    all_joysticks = [JoystickPins(KeyboardStick())]
+                    for joy in range(pygame.joystick.get_count()):
+                        pygame_joystick = pygame.joystick.Joystick(joy)
+                        pygame_joystick.init()
+                        my_joystick = JoystickPins(pygame_joystick)
+                        all_joysticks.append(my_joystick)
+                        print("found_joystick: " + my_joystick.get_name())
 
 # Game loop
 while running:
     if game_over != None:
         won_end_gegner = False
-        show_on_screen(screen,game_over)
+        if level != 1:
+            show_on_screen(screen,game_over)
         game_over = None
         all_sprites = pygame.sprite.Group()
         mobs = pygame.sprite.Group()
@@ -903,16 +1027,18 @@ while running:
         players = []
         players_mini_images = []
         if multiplayer:
-            player1 = Player(0)
+            player1 = Player(0,player_color1)
             player1.start_shield()
-            player_mini_img1 = pygame.transform.scale(player_imges[player.color], (37, 28))
+            player_mini_img1 = pygame.transform.scale(player_imges[player_color1], (37, 28))
             player_mini_img1.set_colorkey(BLACK)
             players_mini_images.append(player_mini_img1)
             players.append(player1)
             all_sprites.add(player1)
-            player2 = Player(1)
+            player2 = Player(1,player_color2)
             player2.start_shield()
-            player_mini_img2 = pygame.transform.scale(player_imges[player.color], (37, 28))
+            while player2.color == player1.color:
+                player2.color = random.randrange(0,len(player_imges))
+            player_mini_img2 = pygame.transform.scale(player_imges[player_color2], (37, 28))
             player_mini_img2.set_colorkey(BLACK)
             players_mini_images.append(player_mini_img2)
             players.append(player2)
@@ -920,12 +1046,14 @@ while running:
         else:
             player1 = Player()
             player1.start_shield()
-            player_mini_img1 = pygame.transform.scale(player_imges[player.color], (37, 28))
+            player_mini_img1 = pygame.transform.scale(player_imges[player1.color], (37, 28))
             player_mini_img1.set_colorkey(BLACK)
             players_mini_images.append(player_mini_img1)
             players.append(player1)
             all_sprites.add(player1)
         make_game_values_more_difficult()
+        for player in players:
+            player.lives = player_lives
         if level % 5 == 0:
             for i in range(anz_enemies):
                 newenemy()
@@ -1005,8 +1133,9 @@ while running:
                 all_sprites.add(pow)
                 powerups.add(pow)
 
-    # check to see if a enemyshot hit the player
+    # check if something hit a player
     for player in players:
+    # check to see if a enemyshot hit the player
         if (in_end_game_animation == False and score < needed_score and level%5 == 0) or (level%10 == 0 and in_end_gegner==True and needed_score >= score):
             if not player.having_shield:
                 hits = pygame.sprite.spritecollide(player, enemy_bullets, True)
@@ -1139,22 +1268,31 @@ while running:
         level += 1
         game_over = WON_GAME
         won_end_gegner = False
-        # make sprite images new to get game having differnet colors each time
-        Player.color = random.randrange(0,len(player_imges))
-        player_mini_img = pygame.transform.scale(player_imges[player.color], (37, 28))
-        player_mini_img.set_colorkey(BLACK)
-        meteor_images = random.choice([brown_meteor_images, grey_meteor_images])
-        enemy_color = random.choice(enemy_colors )
         # make the game more difficult in the next level
         make_game_values_more_difficult()
+        # make new player and new colors to meteors and enemies
+        meteor_images = random.choice([brown_meteor_images, grey_meteor_images])
+        enemy_color = random.choice(enemy_colors )
+        for player in players:
+            player.lives = player_lives
+            if not multiplayer:
+                Player.color = random.randrange(0, len(player_imges))
+            player_mini_img = pygame.transform.scale(player_imges[player.color], (37, 28))
+            player_mini_img.set_colorkey(BLACK)
 
     # Draw / render
     if game_over == None:
         all_sprites.draw(screen)
     draw_level(screen,10,5)
     for player in players:
-        draw_shield_bar(screen, WIDTH - 30*players.index(player), 55, player.health)
-        draw_lives(screen, WIDTH - 80*players.index(player), HEIGHT-40, players_mini_images[players.index(player)], player.lives)
+        draw_shield_bar(screen, WIDTH - 30*(players.index(player)+1), 55, player.health)
+        if len(players) == 1:
+            draw_lives(screen, WIDTH - 80, HEIGHT - 40, players_mini_images[players.index(player)], player.lives)
+        else:
+            if players.index(player) == 0:
+                draw_lives(screen, WIDTH - 107, HEIGHT - 40, players_mini_images[players.index(player)], player.lives)
+            else:
+                draw_lives(screen, WIDTH - 160, HEIGHT - 40, players_mini_images[players.index(player)], player.lives)
     # after drawing everything, flip the display
     pygame.display.flip()
 
