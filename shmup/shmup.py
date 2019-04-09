@@ -44,6 +44,16 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 YELLOW = (255, 255, 0)
+PLAYER_BLUE = (54, 187, 245)
+PLAYER_GREEN = (113, 201, 55)
+PLAYER_ORANGE = (230, 113, 73)
+PLAYER_RED = (159, 66, 62)
+METEOR_BROWN = (153,112,85)
+METEOR_GREY = (154,170,177)
+ENEMY_BLACK = (99,89,109)
+ENEMY_BLUE = (62,136,161)
+ENEMY_GREEN = (124,152,101)
+ENEMY_RED = (187,108,46)
 
 # Spiel variablen
 POWERUP_TIME = 5000
@@ -72,7 +82,7 @@ end_gegner_health = 125
 needed_score = 100
 # Diese Funktion ändert die Spielvariablen in Abhängigkeit des Levels
 def make_game_values_more_difficult():
-    global end_gegner_bullet_time,end_gegner_enemy_send_time,end_gegner_mode_change_time,end_gegner_anz_enemis_send,end_gegner_rotation_speed,end_gegner_health,player_lives,player_speed,mob_speed_x,mob_speed_y,anz_mobs,bullet_speed,power_up_speed,power_up_percent,enemy_bullet_speed,player_shield,shield_power,player_shoot_delay,time_hidden_after_kill,enemy_bullet_time,needed_score
+    global end_gegner_bullet_time,end_gegner_enemy_send_time,end_gegner_mode_change_time,end_gegner_anz_enemis_send,end_gegner_rotation_speed,end_gegner_health,player_lives,player_speed,mob_speed_x,mob_speed_y,anz_mobs,bullet_speed,power_up_speed,power_up_percent,enemy_bullet_speed,player_shield,shield_power,player_shoot_delay,time_hidden_after_kill,enemy_bullet_time,needed_score,max_needed_score,min_needed_score
     if level <= 10:
         end_gegner_bullet_time = 600
         end_gegner_enemy_send_time = 600
@@ -186,7 +196,10 @@ def make_game_values_more_difficult():
         player_shoot_delay = round(2.542 * level + 197.458)
         time_hidden_after_kill = round(-16.949 * level + 1516.949)
         enemy_bullet_time = round(-11.864 * level + 2511.864)
-        needed_score = round(237.288 * level + 762.712)
+        # Benötigte Punktzahl wird aus Gerade der Funkion m * x + b zwischen maximaler und minimaler Zahl berechnet
+        m = (max_needed_score-min_needed_score)/(60-1)
+        b = max_needed_score - m * 60
+        needed_score = m * level + b
     else:
         player_shield = 50
         shield_power[0] = 5
@@ -194,7 +207,14 @@ def make_game_values_more_difficult():
         player_shoot_delay = 350
         time_hidden_after_kill = 500
         enemy_bullet_time = 1800
-        needed_score = 10000
+        needed_score = max_needed_score
+
+#### Ist das Spiel insgesamt zu schwer oder zu leicht, kann man das mit der benötigten Punktazahl im Level sehr leicht anpassen
+# Im ersten Level muss man min_needed_score erreichen, in Level 60 max_needed_score. Dazwischen ist es linear berechnet
+min_needed_score = 800
+max_needed_score = 4000
+#### Zur Orientierung: Ein Treffer gibt ja nach Größe 4 bis 50 Punkte, Die kleinen geben am meisten. Nach wenigen Sekunden Spielen habe ich eine Schnitt von 35 Punkten pro Treffer erhalten.
+                     # Die schießenden Gegner, die alle glich groß sind geben 34 Punkte.
 
 # Andere Werte:
 # Lautstärke
@@ -221,6 +241,8 @@ in_end_gegner = False
 won_end_gegner = False
 # Wenn debug True ist werden mit Prints Infos zum aktuellen Stand des Spiels ausgegeben. Achtung, prints machen das Spiel langsam und es fängt an zu laggen
 debug = False
+# Wenn True schreibt Bildschirmrate oben links in Eck.
+show_frame_rate = True
 
 # Erreichtes:
 total_treffer = 0
@@ -515,8 +537,8 @@ def show_on_screen(surf, calling_reason, selected=None, with_waiting=True, diypl
     # Standart Texte
     draw_text(surf, "SHMUP!", 64, WIDTH / 2, HEIGHT / 6.5)
     draw_text(surf, "Level: " + str(level), 45, WIDTH / 2, HEIGHT / 3.5)
-    draw_text(surf, "Drücke Start oder Leertaste zum Starten", 15, WIDTH / 2, HEIGHT * 4 / 5)
-    draw_text(surf, "Drücke Start und Select oder Leertaste und Enter zum Beenden", 15, WIDTH / 2, HEIGHT * 4 / 5 +20)
+    draw_text(surf, "Drücke Start oder Leertaste zum Starten", 18, WIDTH / 2, HEIGHT * 4/5)
+    draw_text(surf, "Drücke Start und Select oder Leertaste und Enter zum Beenden", 18, WIDTH/2, HEIGHT * 4/5 +23)
     # Bei Multi- / Singleplayer auswahl steht wird der erste Text gezeigt, ansonten der normale
     if selected != None:
         draw_text(surf, "A/D oder Joystick zum Auswahl ändern, Pfeiltaste oder A/B zum auswählen", 20, WIDTH / 2, HEIGHT * 3 / 4)
@@ -556,7 +578,7 @@ def show_on_screen(surf, calling_reason, selected=None, with_waiting=True, diypl
                 waiting = False
                 show_on_screen(surf, calling_reason, selected, with_waiting, diyplay_flip)
 
-def draw_shield_bar(surf,x,y,health):
+def draw_shield_bar(surf,x,y,health,color=RED):
     # Anzeige, wie viel Leben ein Spieler noch hat
     BAR_LENGTH = 20
     BAR_HEIGHT = HEIGHT-60
@@ -567,7 +589,7 @@ def draw_shield_bar(surf,x,y,health):
         fill = BAR_HEIGHT
     outline_rect = pygame.Rect(x, y, BAR_LENGTH, BAR_HEIGHT)
     fill_rect = pygame.Rect(x, y+BAR_HEIGHT-fill, BAR_LENGTH, fill)
-    pygame.draw.rect(surf, GREEN, fill_rect)
+    pygame.draw.rect(surf, color, fill_rect)
     pygame.draw.rect(surf, WHITE, outline_rect, 2)
 
 def draw_lives(surf,x,y,img,lives):
@@ -578,7 +600,7 @@ def draw_lives(surf,x,y,img,lives):
         img_rect.y = y - 40 * i
         surf.blit(img, img_rect)
 
-def draw_level(surf,x,y):
+def draw_level(surf,x,y,color=GREEN):
     # Level oben rechts anzeigen, darunter ein Anzeige, wie weit man schon im Level ist
     draw_text(surf, str(level), 50, x-4, y-4, rect_place="oben_links")
     BAR_LENGTH = 20
@@ -590,13 +612,13 @@ def draw_level(surf,x,y):
         fill = BAR_HEIGHT
     outline_rect = pygame.Rect(x, y+50, BAR_LENGTH, BAR_HEIGHT)
     fill_rect = pygame.Rect(x, y+50+BAR_HEIGHT-fill, BAR_LENGTH, fill)
-    pygame.draw.rect(surf, RED, fill_rect)
+    pygame.draw.rect(surf, color, fill_rect)
     pygame.draw.rect(surf, WHITE, outline_rect, 2)
 
 def draw_erreichtes(surf,x,y):
     # Anzeigen, wieviel Treffer der Spieler schon hat, wie oft er schon geschossen hat und wie oft er schon getötet wurde
     if total_dies == 0:
-        draw_text(surf, "noch nicht gestorben",                                    20, x, y   , rect_place="oben_rechts")
+        draw_text(surf, "noch nie gestorben",                                    20, x, y   , rect_place="oben_rechts")
     else:
         draw_text(surf, "schon "+str(total_dies)+" mal gestorben",                 20, x, y   , rect_place="oben_rechts")
     draw_text    (surf, str(total_treffer)+" von "+str(total_schuesse)+" Treffer", 20, x, y+25, rect_place="oben_rechts")
@@ -880,7 +902,7 @@ class Mob(pygame.sprite.Sprite):
 
 class Enemy(pygame.sprite.Sprite):
     # Schießende Gegner
-    def __init__(self, from_end_gegner = False):
+    def __init__(self, x=None, y=None):
         pygame.sprite.Sprite.__init__(self)
         # Bild holen
         self.image = random.choice(enemy_images[enemy_color])
@@ -888,12 +910,14 @@ class Enemy(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.radius = int(self.rect.width * .85 / 2)
         # pygame.draw.circle(self.image, RED, self.rect.center, self.radius)
-        # Posotion entweder oben oder beim Endgegner
-        if from_end_gegner:
-            self.rect.centerx = WIDTH/2
-            self.rect.centery = HEIGHT/4
+        # Posotion entweder oben oder bei mit gegebener Stelle (Stelle wird beim Endgegner mitgegeben um es aussehen zu lassen als würden sie aus ihm hinausfliegen)
+        if x != None:
+            self.rect.centerx = x
         else:
             self.rect.x = random.randrange(WIDTH - self.rect.width)
+        if y != None:
+            self.rect.centery = y
+        else:
             self.rect.bottom = random.randrange(-80, -20)
         # Geschwindigkeiten in x un dy Richtung
         self.speedy = random.randrange(mob_speed_y[0], mob_speed_y[1])
@@ -960,6 +984,9 @@ class EndGegner(pygame.sprite.Sprite):
         # Erstmal über dem Bildschirm platieren, er fliegt dann von oben bis zum Viertel der Höhe
         self.rect.centerx = WIDTH / 2
         self.rect.centery = -100
+        # Ab Level 30 Bewegung nach links und rechts
+        self.speed_x = 1
+        self.direction = LEFT
         # Rotation
         self.rot = 0
         self.rotation_direction = LEFT
@@ -978,13 +1005,25 @@ class EndGegner(pygame.sprite.Sprite):
         self.mask = None
 
     def update(self):
-        # Wenn der Endgegner seine entgültige Psition noch nicht erreicht hat. Fliegt er langsam dort hin
+        # Wenn der Endgegner seine entgültige Position noch nicht erreicht hat. Fliegt er langsam dort hin
         if self.rect.centery < HEIGHT/4:
+            # Flug zur Endposition ist anfangs schneller und wird dann langsamer. Zusammenhang als Parabel
             calculated = round((5/((-100-(HEIGHT/4))*(-100-(HEIGHT/4))))*((self.rect.centery-(HEIGHT/4))*(self.rect.centery-(HEIGHT/4))))+1
             if self.rect.centery + calculated > HEIGHT/4:
                 self.rect.centery = HEIGHT/4
             else:
                 self.rect.centery += calculated
+        # Wenn die Endposition erreicht ist und man mindestens ind Level 30 ist bewegt sich der Edngegner nach links und rechts
+        elif level >= 30:
+            # self.direction wechselt immer zwischen links und rechts, wenn man an einen linken Rand bei 1/3 Bildschirmbreite stößt oder am rechtem Rand bei 2/3 stößt
+            if self.direction == LEFT:
+                self.rect.x -= self.speed_x
+                if self.rect.centerx < 1/3 * WIDTH:
+                    self.direction = RIGHT
+            elif self.direction == RIGHT:
+                self.rect.x += self.speed_x
+                if self.rect.centerx > 2/3 * WIDTH:
+                    self.direction = LEFT
         # Rotation
         self.rotate()
         # Schießen ...
@@ -998,6 +1037,7 @@ class EndGegner(pygame.sprite.Sprite):
                     all_sprites.add(bullet)
                     enemy_bullets.add(bullet)
             elif self.last_mode_change + end_gegner_mode_change_time*2 < pygame.time.get_ticks():
+                # Mudos wechselt nach doppelter modus-wechsel-zeit Zeit auf Gegner entsenden
                 self.last_mode_change = pygame.time.get_ticks()
                 self.mode = ENEMY
         #  ... oder Gegner entsenden
@@ -1005,11 +1045,12 @@ class EndGegner(pygame.sprite.Sprite):
             if self.last_enemy_entsenden + end_gegner_enemy_send_time < pygame.time.get_ticks() and self.anz_enemies_sended < end_gegner_anz_enemis_send:
                 self.last_enemy_entsenden = pygame.time.get_ticks()
                 self.anz_enemies_sended += 1
-                enemy = Enemy(from_end_gegner=True )
+                enemy = Enemy(self.rect.centerx,self.rect.centery)
                 enemy.kill_when_out_of_screen = True
                 all_sprites.add(enemy)
                 mobs.add(enemy)
             elif self.last_mode_change + end_gegner_mode_change_time < pygame.time.get_ticks():
+                # Mudos wechselt nach der modus-wechsel-zeit auf Schießen
                 self.last_mode_change = pygame.time.get_ticks()
                 self.mode = SHOOT
                 self.anz_enemies_sended = 0
@@ -1160,6 +1201,9 @@ pygame.mixer.music.play(loops=-1)
 # Farben der Gegner und Meteoriten ändern sich nach jeden Level. Hier werden sie erstmals gesetzt
 meteor_images = random.choice([brown_meteor_images,grey_meteor_images])
 enemy_color = random.choice(enemy_colors)
+# Farben benötigt für die Anzeigen am Rand des Bildschirms
+player_bar_colors = [PLAYER_BLUE,PLAYER_GREEN,PLAYER_RED,PLAYER_ORANGE]
+level_bar_colors = {0:METEOR_BROWN,1:METEOR_GREY,enemy_colors[0]:ENEMY_BLACK,enemy_colors[1]:ENEMY_BLUE,enemy_colors[2]:ENEMY_GREEN,enemy_colors[3]:ENEMY_RED}
 
 # Beim Multi-player haben die beiden Spieler feste Farben, aber nicht die gleichen
 player_color1 = random.randrange(0,len(player_imges))
@@ -1167,10 +1211,11 @@ player_color2 = random.randrange(0,len(player_imges))
 while player_color1 == player_color2:
     player_color2 = random.randrange(0,len(player_imges))
 
-# Multi-player-select
+
+########## Multiplayerauswahl ##########
 wait_for_single_multiplayer_selction()
 
-########## Hier startet das eigentlich Spiel ##########
+########## Hier startet das eigentliche Spiel ##########
 while running:
     # Ist das Spiel aus irgendeinem Grund zu Ende, ist also game_over nicht None, werden Alle Spieler, Gegner und Meteoriten erstellt und das Spiel gestartet
     if game_over != None:
@@ -1257,7 +1302,7 @@ while running:
             if in_end_gegner == False or (in_end_gegner and ((hit.rect.centerx > end_gegner.rect.centerx+150 or hit.rect.centerx < end_gegner.rect.centerx-150) or hit.rect.centery > end_gegner.rect.centery+150)):
                 hit.kill()
                 total_treffer += 1
-                score += 50 - hit.radius
+                score += 55 - hit.radius
                 if score > needed_score:
                     score = needed_score
                 random.choice(expl_sounds).play()
@@ -1455,10 +1500,13 @@ while running:
     if game_over == None:
         all_sprites.draw(screen)
     # Anzeigen am Rand des Bilschirms zeichnen
-    draw_level(screen,10,5)
+    if level%5 == 0:
+        draw_level(screen, 10, 5, level_bar_colors[enemy_color])
+    else:
+        draw_level(screen, 10, 5, level_bar_colors[[brown_meteor_images,grey_meteor_images].index(meteor_images)])
     draw_erreichtes(screen,WIDTH-10,5)
     for player in players:
-        draw_shield_bar(screen, WIDTH - 30*(players.index(player)+1), 55, player.health)
+        draw_shield_bar(screen, WIDTH - 30*(players.index(player)+1), 55, player.health, player_bar_colors[player.color])
         if len(players) == 1:
             draw_lives(screen, WIDTH - 80, HEIGHT - 40, players_mini_images[players.index(player)], player.lives)
         else:
@@ -1466,6 +1514,9 @@ while running:
                 draw_lives(screen, WIDTH - 107, HEIGHT - 40, players_mini_images[players.index(player)], player.lives)
             else:
                 draw_lives(screen, WIDTH - 160, HEIGHT - 40, players_mini_images[players.index(player)], player.lives)
+
+    if show_frame_rate:
+        draw_text(screen,"{:.2f}".format(clock.get_fps()),23,70,3,WHITE,"oben_links")
 
     # Nachdem alles gezeichnet ist anzeigen
     pygame.display.flip()
