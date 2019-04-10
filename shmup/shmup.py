@@ -1467,6 +1467,7 @@ while running:
             else:
                 draw_lives(screen, WIDTH - 160, HEIGHT - 40, players_mini_images[players.index(player)], player.lives)
 
+    draw_text(screen,"{:.2f}".format(clock.get_fps()),20,55,3,WHITE,"oben_links")
     # Nachdem alles gezeichnet ist anzeigen
     pygame.display.flip()
 
