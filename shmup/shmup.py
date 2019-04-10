@@ -54,6 +54,10 @@ ENEMY_BLACK = (99,89,109)
 ENEMY_BLUE = (62,136,161)
 ENEMY_GREEN = (124,152,101)
 ENEMY_RED = (187,108,46)
+ENDGEGNER_BLACK = (62,62,62)
+ENDGEGNER_BLUE = (20,145,200)
+ENDGEGNER_GREEN = (100,165,20)
+ENDGEGNER_RED = (175,60,60)
 
 # Spiel variablen
 POWERUP_TIME = 5000
@@ -618,12 +622,15 @@ def draw_level(surf,x,y,color=GREEN):
 def draw_erreichtes(surf,x,y):
     # Anzeigen, wieviel Treffer der Spieler schon hat, wie oft er schon geschossen hat und wie oft er schon getötet wurde
     if total_dies == 0:
-        draw_text(surf, "noch nie gestorben",                                    20, x, y   , rect_place="oben_rechts")
+        draw_text(surf, "noch nie gestorben", 20, x, y, rect_place="oben_rechts")
     else:
-        draw_text(surf, "schon "+str(total_dies)+" mal gestorben",                 20, x, y   , rect_place="oben_rechts")
-    draw_text    (surf, str(total_treffer)+" von "+str(total_schuesse)+" Treffer", 20, x, y+25, rect_place="oben_rechts")
+        draw_text(surf, "schon "+str(total_dies)+" mal gestorben", 20, x, y, rect_place="oben_rechts")
+    try:
+        draw_text(surf, str(total_treffer)+" von "+str(total_schuesse)+" Treffer ("+str(round((total_treffer/total_schuesse)*100))+"%)", 20, x, y+25, rect_place="oben_rechts")
+    except ZeroDivisionError:
+        draw_text(surf, str(total_treffer)+" von "+str(total_schuesse)+" Treffer ( - %)", 20, x, y+25, rect_place="oben_rechts")
 
-def draw_end_gegner_bar(surf,x,y):
+def draw_end_gegner_bar(surf,x,y,color=YELLOW):
     # Anzeige, wei viel Leben der Endgegner noch hat
     BAR_LENGTH = 20
     BAR_HEIGHT = HEIGHT -60
@@ -634,7 +641,7 @@ def draw_end_gegner_bar(surf,x,y):
         fill = BAR_HEIGHT
     outline_rect = pygame.Rect(x, y, BAR_LENGTH, BAR_HEIGHT)
     fill_rect = pygame.Rect(x, y+BAR_HEIGHT-fill, BAR_LENGTH, fill)
-    pygame.draw.rect(surf, YELLOW, fill_rect)
+    pygame.draw.rect(surf, color, fill_rect)
     pygame.draw.rect(surf, WHITE, outline_rect, 2)
 
 def newmob():
@@ -1204,6 +1211,7 @@ enemy_color = random.choice(enemy_colors)
 # Farben benötigt für die Anzeigen am Rand des Bildschirms
 player_bar_colors = [PLAYER_BLUE,PLAYER_GREEN,PLAYER_RED,PLAYER_ORANGE]
 level_bar_colors = {0:METEOR_BROWN,1:METEOR_GREY,enemy_colors[0]:ENEMY_BLACK,enemy_colors[1]:ENEMY_BLUE,enemy_colors[2]:ENEMY_GREEN,enemy_colors[3]:ENEMY_RED}
+endgergner_bar_colors = {enemy_colors[0]:ENDGEGNER_BLACK,enemy_colors[1]:ENDGEGNER_BLUE,enemy_colors[2]:ENDGEGNER_GREEN,enemy_colors[3]:ENDGEGNER_RED}
 
 # Beim Multi-player haben die beiden Spieler feste Farben, aber nicht die gleichen
 player_color1 = random.randrange(0,len(player_imges))
@@ -1319,7 +1327,6 @@ while running:
 
     # Überprüfen ob der Endgegner getroffen wurde
     if level % 10 == 0 and in_end_gegner == True and needed_score >= score:
-        draw_end_gegner_bar(screen, 50, 55)
         found_hit = False
         hit_place = (-100,-100)
         hits = pygame.sprite.spritecollide(end_gegner, bullets, False)
@@ -1504,6 +1511,9 @@ while running:
         draw_level(screen, 10, 5, level_bar_colors[enemy_color])
     else:
         draw_level(screen, 10, 5, level_bar_colors[[brown_meteor_images,grey_meteor_images].index(meteor_images)])
+    # Im Endgegnerkampf Leben des Endgegners in entsprechender Farbe anzeigen
+    if level % 10 == 0 and in_end_gegner == True and needed_score >= score:
+        draw_end_gegner_bar(screen, 50, 55, color=endgergner_bar_colors[enemy_color])
     draw_erreichtes(screen,WIDTH-10,5)
     for player in players:
         draw_shield_bar(screen, WIDTH - 30*(players.index(player)+1), 55, player.health, player_bar_colors[player.color])
