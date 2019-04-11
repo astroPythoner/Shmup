@@ -501,7 +501,7 @@ class Game():
                 if self.check_key_pressed(START):
                     waiting = False
                 # Links und Rechts zum erhöhen oder verringern des Levels
-                if self.check_key_pressed(UP) and last_switch + 300 < pygame.time.get_ticks():
+                if self.check_key_pressed(DOWN) and last_switch + 300 < pygame.time.get_ticks():
                     last_switch = pygame.time.get_ticks()
                     self.level -= 1
                     if self.level < 1:
@@ -509,7 +509,7 @@ class Game():
                     self.make_game_values_more_difficult()
                     waiting = False
                     self.show_on_screen(surf, calling_reason, selected, with_waiting, diyplay_flip)
-                if self.check_key_pressed(DOWN) and last_switch + 300 < pygame.time.get_ticks():
+                if self.check_key_pressed(UP) and last_switch + 300 < pygame.time.get_ticks():
                     last_switch = pygame.time.get_ticks()
                     self.level += 1
                     self.make_game_values_more_difficult()
@@ -757,8 +757,8 @@ class Game():
                                 print("player killed by shoot")
                                 self.total_dies += 1
                             player_die_sound.play()
-                            death_explosion = Explosion(self, player.rect.center, 'player')
-                            self.all_sprites.add(death_explosion)
+                            self.death_explosion = Explosion(self, player.rect.center, 'player')
+                            self.all_sprites.add(self.death_explosion)
                             player.hide()
                             player.lives -= 1
                             player.health = self.player_shield
@@ -789,8 +789,8 @@ class Game():
                                 print("player killed by mob")
                                 self.total_dies += 1
                             player_die_sound.play()
-                            death_explosion = Explosion(self,player.rect.center, 'player')
-                            self.all_sprites.add(death_explosion)
+                            self.death_explosion = Explosion(self,player.rect.center, 'player')
+                            self.all_sprites.add(self.death_explosion)
                             player.hide()
                             player.lives -= 1
                             player.health = self.player_shield
@@ -825,7 +825,7 @@ class Game():
                             player.health = self.player_shield
 
             # Spiel ist verloren, wenn der Gegner keine Leben mehr hat und die Explosion des Spielers vorbei ist
-            if player.lives == 0 and not death_explosion.alive():
+            if player.lives == 0 and not self.death_explosion.alive():
                 if self.debug:
                     print("player has no lives anymore. Game ends")
                 self.game_over = LOST_GAME
