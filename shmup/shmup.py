@@ -53,7 +53,7 @@ class Game():
 
         # Andere Werte:
         # Level anfangs auf 1 setzen und die Spielvariablen auf diese Schwierigkeit stellen
-        self.level = 10
+        self.level = 1
         self.make_game_values_more_difficult()
         # Im Multiplayer-modus?
         self.multiplayer = False
@@ -256,6 +256,12 @@ class Game():
                     if check_for == RIGHT:
                         if joystick.get_axis_right() or joystick.get_shoulder_right():
                             return True
+                    if check_for == UP:
+                        if joystick.get_axis_up():
+                            return True
+                    if check_for == DOWN:
+                        if joystick.get_axis_down():
+                            return True
                     if check_for == SHOOT:
                         if joystick.get_A() or joystick.get_B():
                             return True
@@ -277,6 +283,12 @@ class Game():
                         return True
                 if check_for == RIGHT:
                     if self.all_joysticks[joystick_num].get_axis_right() or self.all_joysticks[joystick_num].get_shoulder_right():
+                        return True
+                if check_for == UP:
+                    if self.all_joysticks[joystick_num].get_axis_up():
+                        return True
+                if check_for == DOWN:
+                    if self.all_joysticks[joystick_num].get_axis_down():
                         return True
                 if check_for == SHOOT:
                     if self.all_joysticks[joystick_num].get_A() or self.all_joysticks[joystick_num].get_B():
@@ -303,6 +315,12 @@ class Game():
                         return True
                 if check_for == RIGHT:
                     if joystick.get_axis_right() or joystick.get_shoulder_right():
+                        return True
+                if check_for == UP:
+                    if joystick.get_axis_up():
+                        return True
+                if check_for == DOWN:
+                    if joystick.get_axis_down():
                         return True
                 if check_for == SHOOT:
                     if joystick.get_A() or joystick.get_B():
@@ -338,7 +356,7 @@ class Game():
             if self.check_key_pressed(ESC):
                 pygame.quit()
             # Auswahl ändern durch hochzählen von selected
-            if self.check_key_pressed(LEFT) or self.check_key_pressed(RIGHT):
+            if self.check_key_pressed(LEFT) or self.check_key_pressed(RIGHT) or self.check_key_pressed(UP) or self.check_key_pressed(DOWN):
                 if last_switch + 300 < pygame.time.get_ticks():
                     last_switch = pygame.time.get_ticks()
                     selected += 1
@@ -356,7 +374,7 @@ class Game():
                 # Multi-palyer
                 elif selected == 0:
                     # Auswählen welche Kontroller genommen werden soll. Weitere Schritte wie beim Single-player
-                    if self.wait_for_joystick_confirm(self.screen, 2):
+                    if self.wait_for_joystick_confirm(screen, 2):
                         waiting = False
                         self.end_game = None
                         self.multiplayer = True
@@ -406,12 +424,12 @@ class Game():
             if self.check_key_pressed(ESC):
                 pygame.quit()
             # Auswahl ändern
-            if self.check_key_pressed(LEFT) and last_switch + 300 < pygame.time.get_ticks():
+            if (self.check_key_pressed(LEFT) or self.check_key_pressed(UP)) and last_switch + 300 < pygame.time.get_ticks():
                 last_switch = pygame.time.get_ticks()
                 selected_controller_num -= 1
                 if selected_controller_num < 0:
                     selected_controller_num = 0
-            if self.check_key_pressed(RIGHT) and last_switch + 300 < pygame.time.get_ticks():
+            if (self.check_key_pressed(RIGHT) or self.check_key_pressed(DOWN)) and last_switch + 300 < pygame.time.get_ticks():
                 last_switch = pygame.time.get_ticks()
                 selected_controller_num += 1
                 if selected_controller_num >= len(self.all_joysticks):
@@ -483,7 +501,7 @@ class Game():
                 if self.check_key_pressed(START):
                     waiting = False
                 # Links und Rechts zum erhöhen oder verringern des Levels
-                if self.check_key_pressed(LEFT) and last_switch + 300 < pygame.time.get_ticks():
+                if self.check_key_pressed(UP) and last_switch + 300 < pygame.time.get_ticks():
                     last_switch = pygame.time.get_ticks()
                     self.level -= 1
                     if self.level < 1:
@@ -491,7 +509,7 @@ class Game():
                     self.make_game_values_more_difficult()
                     waiting = False
                     self.show_on_screen(surf, calling_reason, selected, with_waiting, diyplay_flip)
-                if self.check_key_pressed(RIGHT) and last_switch + 300 < pygame.time.get_ticks():
+                if self.check_key_pressed(DOWN) and last_switch + 300 < pygame.time.get_ticks():
                     last_switch = pygame.time.get_ticks()
                     self.level += 1
                     self.make_game_values_more_difficult()
@@ -633,14 +651,14 @@ class Game():
         self.players = []
         self.players_mini_images = []
         if self.multiplayer:
-            player1 = Player(0, self.player_color1)
+            player1 = Player(self, 0, self.player_color1)
             player1.start_shield()
             player_mini_img1 = pygame.transform.scale(player_imges[self.player_color1], (37, 28))
             player_mini_img1.set_colorkey(BLACK)
             self.players_mini_images.append(player_mini_img1)
             self.players.append(player1)
             self.all_sprites.add(player1)
-            player2 = Player(1, self.player_color2)
+            player2 = Player(self, 1, self.player_color2)
             player2.start_shield()
             while player2.color == player1.color:
                 player2.color = random.randrange(0, len(player_imges))
@@ -771,7 +789,7 @@ class Game():
                                 print("player killed by mob")
                                 self.total_dies += 1
                             player_die_sound.play()
-                            death_explosion = Explosion(self,aplayer.rect.center, 'player')
+                            death_explosion = Explosion(self,player.rect.center, 'player')
                             self.all_sprites.add(death_explosion)
                             player.hide()
                             player.lives -= 1

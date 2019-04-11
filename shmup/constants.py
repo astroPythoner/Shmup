@@ -19,6 +19,8 @@ WON_GAME = "won"
 START_GAME = "start"
 LEFT = "left"
 RIGHT = "right"
+UP = "up"
+DOWN = "down"
 SHOOT = "shoot"
 ENEMY = "enemy"
 ESC = "escape"
@@ -148,6 +150,6 @@ pygame.mixer.music.set_volume(game_sound_volume)
 pygame.mixer.music.play(loops=-1)
 
 # Farben benötigt für die Anzeigen am Rand des Bildschirms
-player_bar_colors = [PLAYER_BLUE,PLAYER_GREEN,PLAYER_RED,PLAYER_ORANGE]
+player_bar_colors = [PLAYER_BLUE,PLAYER_GREEN,PLAYER_ORANGE,PLAYER_RED]
 level_bar_colors = {0:METEOR_BROWN,1:METEOR_GREY,enemy_colors[0]:ENEMY_BLACK,enemy_colors[1]:ENEMY_BLUE,enemy_colors[2]:ENEMY_GREEN,enemy_colors[3]:ENEMY_RED}
 endgergner_bar_colors = {enemy_colors[0]:ENDGEGNER_BLACK,enemy_colors[1]:ENDGEGNER_BLUE,enemy_colors[2]:ENDGEGNER_GREEN,enemy_colors[3]:ENDGEGNER_RED}
