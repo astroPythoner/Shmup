@@ -17,6 +17,8 @@ clock = pygame.time.Clock()
 LOST_GAME = "lost"
 WON_GAME = "won"
 START_GAME = "start"
+BEFORE_FIRST_GAME = "before first game"
+
 LEFT = "left"
 RIGHT = "right"
 UP = "up"
@@ -27,6 +29,7 @@ ESC = "escape"
 ALL = "all"
 START = "start"
 XY = "xy"
+X = "x"
 
 # Standartfarben
 WHITE = (255, 255, 255)

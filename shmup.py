@@ -8,9 +8,6 @@
 # Big Space-ships from Wisedawn (https://wisedawn.itch.io/)
 
 import pygame
-import random
-from os import path
-from os import listdir
 import time
 from joystickpins import JoystickPins, KeyboardStick
 from constants import *
@@ -69,7 +66,7 @@ class Game():
         self.in_end_gegner = False
         self.won_end_gegner = False
         # Wenn debug True ist werden mit Prints Infos zum aktuellen Stand des Spiels ausgegeben. Achtung, prints machen das Spiel langsam und es fängt an zu laggen
-        self.debug = True
+        self.debug = False
         # Wenn True schreibt Bildschirmrate oben links in Eck.
         self.show_frame_rate = False
 
@@ -268,6 +265,9 @@ class Game():
                     if check_for == XY:
                         if joystick.get_X() or joystick.get_Y():
                             return True
+                    if check_for == X:
+                        if joystick.get_X():
+                            return True
                     if check_for == ESC:
                         if joystick.get_select() and joystick.get_start():
                             return True
@@ -295,6 +295,9 @@ class Game():
                         return True
                 if check_for == XY:
                     if self.all_joysticks[joystick_num].get_X() or self.all_joysticks[joystick_num].get_Y():
+                        return True
+                if check_for == X:
+                    if self.all_joysticks[joystick_num].get_X():
                         return True
                 if check_for == ESC:
                     if self.all_joysticks[joystick_num].get_select() and self.all_joysticks[joystick_num].get_start():
@@ -327,6 +330,9 @@ class Game():
                         return True
                 if check_for == XY:
                     if joystick.get_X() or joystick.get_Y():
+                        return True
+                if check_for == X:
+                    if joystick.get_X():
                         return True
                 if check_for == ESC:
                     if joystick.get_select() and joystick.get_start():
@@ -371,6 +377,7 @@ class Game():
                         waiting = False
                         self.end_game = None
                         self.multiplayer = False
+                        self.game_over = BEFORE_FIRST_GAME
                 # Multi-palyer
                 elif selected == 0:
                     # Auswählen welche Kontroller genommen werden soll. Weitere Schritte wie beim Single-player
@@ -378,6 +385,7 @@ class Game():
                         waiting = False
                         self.end_game = None
                         self.multiplayer = True
+                        self.game_over = BEFORE_FIRST_GAME
 
     def wait_for_joystick_confirm(self, surf, num_joysticks):
         # Diese Funktion zeigt den Bilschirm an, auf dem die zu benutzenden Kontroller gewählt werden.
@@ -463,6 +471,8 @@ class Game():
         elif calling_reason == WON_GAME:
             self.draw_text(surf, "Gewonnen", 32, WIDTH / 2, HEIGHT / 2.2)
             self.draw_text(surf, "Schaffst du das nächste Level auch?", 28, WIDTH / 2, HEIGHT / 1.8)
+        elif calling_reason == BEFORE_FIRST_GAME:
+            self.draw_text(surf, "Shut them up!", 32, WIDTH / 2, HEIGHT / 2.2)
         elif calling_reason == START_GAME:
             self.draw_text(surf, "Shut them up!", 32, WIDTH / 2, HEIGHT / 2.2)
             if selected == 0:
@@ -615,6 +625,12 @@ class Game():
                 if event.type == pygame.QUIT:
                     self.running = False
 
+            # X zum aktuelles Level abzubrechen
+            if self.check_key_pressed(X):
+                if self.debug:
+                    print("game over by pressing X")
+                self.game_over = LOST_GAME
+
             # Alle Spieler, Gegner, Meteoriten, ... updaten. (Ruft die Funktion 'update()' von allen Sprites, die in der Gruppe all_sprites liegen auf)
             self.all_sprites.update()
 
@@ -629,8 +645,7 @@ class Game():
 
     def new(self):
         # Vor dem ersten Level hat man die Multi- / Singleplayer Auswahl, bei allen anderen werden die Standarttexte gezeichnet
-        if self.level != 1:
-            self.show_on_screen(screen, self.game_over)
+        self.show_on_screen(screen, self.game_over)
 
         # Spiel wird wieder gestartet
         self.won_end_gegner = False
@@ -866,8 +881,6 @@ class Game():
                 if len(self.mobs.sprites()) == 0:
                     self.in_end_game_animation = False
             elif len(self.mobs) == 0:
-                if self.debug:
-                    print("All mobs exploded game ends")
                 self.in_end_game_animation = False
                 self.in_end_gegner = False
         # Ist die Animation am Ende des Spiels um und du nichtmehr im Spiel bist. Geht es ab ins nächste Level
