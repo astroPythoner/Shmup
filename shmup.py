@@ -511,7 +511,7 @@ class Game():
                 if self.check_key_pressed(START):
                     waiting = False
                 # Links und Rechts zum erhöhen oder verringern des Levels
-                if self.check_key_pressed(DOWN) and last_switch + 300 < pygame.time.get_ticks():
+                if self.check_key_pressed(LEFT) and last_switch + 300 < pygame.time.get_ticks():
                     last_switch = pygame.time.get_ticks()
                     self.level -= 1
                     if self.level < 1:
@@ -519,7 +519,7 @@ class Game():
                     self.make_game_values_more_difficult()
                     waiting = False
                     self.show_on_screen(surf, calling_reason, selected, with_waiting, diyplay_flip)
-                if self.check_key_pressed(UP) and last_switch + 300 < pygame.time.get_ticks():
+                if self.check_key_pressed(RIGHT) and last_switch + 300 < pygame.time.get_ticks():
                     last_switch = pygame.time.get_ticks()
                     self.level += 1
                     self.make_game_values_more_difficult()
@@ -743,8 +743,8 @@ class Game():
                         if self.end_gegner.health <= 0:
                             if self.debug:
                                 print("end_gegner is dead " + str(self.end_gegner.alive()))
-                                self.end_gegner.kill()
-                                player_die_sound.play()
+                            self.end_gegner.kill()
+                            player_die_sound.play()
                             giant_explosion = Explosion(self, self.end_gegner.rect.center, 'player')
                             self.all_sprites.add(giant_explosion)
                         random.choice(expl_sounds).play()
