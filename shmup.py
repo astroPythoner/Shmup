@@ -1,8 +1,6 @@
 # Weiterentwicklung von:
 # KidsCanCode - Game Development with Pygame video series
 
-# ToDo: Bewegungen hängen manchmal. Alle Bewgungen sollten in Abhängigkeit der Zeit und nicht der Bildschirmgeschwindigkeit sein.
-
 #(http://creativecommons.org/publicdomain/zero/1.0/)
 # Art from Kenney.nl (www.kenney.nl)
 # Big Space-ships from Wisedawn (https://wisedawn.itch.io/)
@@ -46,7 +44,7 @@ class Game():
         self.min_needed_score = 1000
         self.max_needed_score = 4500
         #### Zur Orientierung: Ein Treffer gibt ja nach Größe 4 bis 50 Punkte, Die kleinen geben am meisten. Nach wenigen Sekunden Spielen habe ich eine Schnitt von 35 Punkten pro Treffer erhalten.
-        # Die schießenden Gegner, die alle glich groß sind geben 34 Punkte.
+        # Die schießenden Gegner, die alle gleich groß sind geben 34 Punkte.
 
         # Andere Werte:
         # Level anfangs auf 1 setzen und die Spielvariablen auf diese Schwierigkeit stellen
@@ -149,52 +147,52 @@ class Game():
 
         if self.level < 15:
             self.player_lives = 4
-            self.player_speed = 8
-            self.mob_speed_x[0] = -4
-            self.mob_speed_x[1] = 4
-            self.mob_speed_y[0] = 1
-            self.mob_speed_y[1] = 5
+            self.player_speed = 480
+            self.mob_speed_x[0] = -240
+            self.mob_speed_x[1] = 240
+            self.mob_speed_y[0] = 60
+            self.mob_speed_y[1] = 300
             self.anz_mobs = 8
-            self.bullet_speed = 12
-            self.power_up_speed = 4
+            self.bullet_speed = 720
+            self.power_up_speed = 240
             self.power_up_percent = 0.8
-            self.enemy_bullet_speed = 5
+            self.enemy_bullet_speed = 300
         elif self.level < 30:
             self.player_lives = 3
-            self.player_speed = 7
-            self.mob_speed_x[0] = -3
-            self.mob_speed_x[1] = 3
-            self.mob_speed_y[0] = 1
-            self.mob_speed_y[1] = 7
+            self.player_speed = 429
+            self.mob_speed_x[0] = -180
+            self.mob_speed_x[1] = 180
+            self.mob_speed_y[0] = 60
+            self.mob_speed_y[1] = 420
             self.anz_mobs = 10
-            self.bullet_speed = 10
-            self.power_up_speed = 5
+            self.bullet_speed = 600
+            self.power_up_speed = 300
             self.power_up_percent = 0.85
-            self.enemy_bullet_speed = 6
+            self.enemy_bullet_speed = 360
         elif self.level < 50:
             self.player_lives = 2
-            self.player_speed = 6
-            self.mob_speed_x[0] = -2
-            self.mob_speed_x[1] = 2
-            self.mob_speed_y[0] = 2
-            self.mob_speed_y[1] = 8
+            self.player_speed = 360
+            self.mob_speed_x[0] = -120
+            self.mob_speed_x[1] = 120
+            self.mob_speed_y[0] = 120
+            self.mob_speed_y[1] = 480
             self.anz_mobs = 14
-            self.bullet_speed = 8
-            self.power_up_speed = 6
+            self.bullet_speed = 480
+            self.power_up_speed = 360
             self.power_up_percent = 0.9
-            self.enemy_bullet_speed = 7
+            self.enemy_bullet_speed = 420
         else:
             self.player_lives = 2
-            self.player_speed = 5
-            self.mob_speed_x[0] = -2
-            self.mob_speed_x[1] = 2
-            self.mob_speed_y[0] = 3
-            self.mob_speed_y[1] = 9
+            self.player_speed = 300
+            self.mob_speed_x[0] = -120
+            self.mob_speed_x[1] = 120
+            self.mob_speed_y[0] = 180
+            self.mob_speed_y[1] = 540
             self.anz_mobs = 19
-            self.bullet_speed = 6
-            self.power_up_speed = 7
+            self.bullet_speed = 360
+            self.power_up_speed = 420
             self.power_up_percent = 0.95
-            self.enemy_bullet_speed = 8
+            self.enemy_bullet_speed = 480
 
         if self.level <= 60:
             self.player_shield = round(-1.695 * self.level + 151.695)
@@ -616,7 +614,7 @@ class Game():
             screen.blit(background, background_rect)
 
             # Auf Bildschirmgeschwindigkeit achten
-            clock.tick(FPS)
+            self.time_diff = clock.tick(FPS) / 1000
 
             # Eingaben zum Verlassen des Spiels checken
             if self.check_key_pressed(ESC):

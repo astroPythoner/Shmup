@@ -57,6 +57,7 @@ class Player(pygame.sprite.Sprite):
         # Nach dem Sterben wird der Spieler nur außerhalb des Spielfeldes gesetzt und nicht neu erstellt. Außerhalb setzten passiert hier
         if self.hidden and pygame.time.get_ticks() - self.hide_timer > self.game.time_hidden_after_kill:
             self.hidden = False
+            # In die Mitte zehn Felder über das Spielfeld setzen
             self.rect.centerx = WIDTH / 2
             self.rect.bottom = HEIGHT - 10
 
@@ -71,7 +72,7 @@ class Player(pygame.sprite.Sprite):
             self.shoot()
 
         # Spieler in x-Richtung bewegen und verhindern, dass er aus dem Spielfeld stürtzt
-        self.rect.x += self.speedx
+        self.rect.x += self.speedx * self.game.time_diff
         if self.rect.right > WIDTH:
             self.rect.right = WIDTH
         if self.rect.left < 0:
@@ -163,7 +164,7 @@ class Bullet(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(self.image)
 
     def update(self):
-        self.rect.y += self.speedy
+        self.rect.y += self.speedy * self.game.time_diff
         # Wenn der Schuss oben aus dem Spielfeld fliegt töten
         if self.rect.bottom < 0:
             self.kill()
@@ -181,13 +182,13 @@ class SmallBullet(pygame.sprite.Sprite):
         self.rect.centerx = x
         self.speedy = - self.game.bullet_speed
         if direction == LEFT:
-            self.speedx = -2
+            self.speedx = -100
         else:
-            self.speedx = 2
+            self.speedx = 100
 
     def update(self):
-        self.rect.y += self.speedy
-        self.rect.x += self.speedx
+        self.rect.y += self.speedy * self.game.time_diff
+        self.rect.x += self.speedx * self.game.time_diff
         # Wenn der Schuss aus dem Spielfeld fliegt töten
         if self.rect.bottom < 0 or self.rect.left < 0 or self.rect.right > WIDTH:
             self.kill()
@@ -248,8 +249,8 @@ class Mob(pygame.sprite.Sprite):
         # Rotieren
         self.rotate()
         # Bewegen
-        self.rect.x += self.speedx
-        self.rect.y += self.speedy
+        self.rect.x += self.speedx * self.game.time_diff
+        self.rect.y += self.speedy * self.game.time_diff
         # Beim Flug aus dem Spielfeld wieder nach oben setzen um erneut hinab zu fallen
         if self.rect.top > HEIGHT + 10 or self.rect.left < -100 or self.rect.right > WIDTH + 100:
             # Geschwindikeiten werden wieder zufällig gesetzt
@@ -287,8 +288,8 @@ class Enemy(pygame.sprite.Sprite):
 
     def update(self):
         # Bewegen
-        self.rect.x += self.speedx
-        self.rect.y += self.speedy
+        self.rect.x += self.speedx * self.game.time_diff
+        self.rect.y += self.speedy * self.game.time_diff
         # Schießen
         if self.last_shot+self.game.enemy_bullet_time < pygame.time.get_ticks():
             self.last_shot = pygame.time.get_ticks()
@@ -323,7 +324,7 @@ class EnemyBullet(pygame.sprite.Sprite):
 
     def update(self):
         # Nach unten Bewegen
-        self.rect.y += self.speedy
+        self.rect.y += self.speedy * self.game.time_diff
         # Beim verlassen des SPielfeldes töten
         if self.rect.bottom > HEIGHT:
             self.kill()
@@ -345,7 +346,7 @@ class EndGegner(pygame.sprite.Sprite):
         self.rect.centerx = WIDTH / 2
         self.rect.centery = -100
         # Ab Level 30 Bewegung nach links und rechts
-        self.speed_x = 1
+        self.speed_x = 50
         self.direction = LEFT
         # Rotation
         self.rot = 0
@@ -367,21 +368,19 @@ class EndGegner(pygame.sprite.Sprite):
     def update(self):
         # Wenn der Endgegner seine entgültige Position noch nicht erreicht hat. Fliegt er langsam dort hin
         if self.rect.centery < HEIGHT/4:
-            # Flug zur Endposition ist anfangs schneller und wird dann langsamer. Zusammenhang als Parabel
-            calculated = round((5/((-100-(HEIGHT/4))*(-100-(HEIGHT/4))))*((self.rect.centery-(HEIGHT/4))*(self.rect.centery-(HEIGHT/4))))+1
-            if self.rect.centery + calculated > HEIGHT/4:
+            if self.rect.centery + 3 > HEIGHT/4:
                 self.rect.centery = HEIGHT/4
             else:
-                self.rect.centery += calculated
+                self.rect.centery += 3
         # Wenn die Endposition erreicht ist und man mindestens ind Level 30 ist bewegt sich der Edngegner nach links und rechts
         elif self.game.level >= 30:
             # self.direction wechselt immer zwischen links und rechts, wenn man an einen linken Rand bei 1/3 Bildschirmbreite stößt oder am rechtem Rand bei 2/3 stößt
             if self.direction == LEFT:
-                self.rect.x -= self.speed_x
+                self.rect.x -= self.speed_x * self.game.time_diff
                 if self.rect.centerx < 1/3 * WIDTH:
                     self.direction = RIGHT
             elif self.direction == RIGHT:
-                self.rect.x += self.speed_x
+                self.rect.x += self.speed_x * self.game.time_diff
                 if self.rect.centerx > 2/3 * WIDTH:
                     self.direction = LEFT
         # Rotation
@@ -454,8 +453,8 @@ class EndGegnerBullet(pygame.sprite.Sprite):
 
     def update(self):
         # Bewegung in x und y Richtung aus dem Vektor
-        self.rect.y += self.vector.y
-        self.rect.x += self.vector.x
+        self.rect.y += self.vector.y * self.game.time_diff
+        self.rect.x += self.vector.x * self.game.time_diff
         # Beim verlassen des Spielfeldes töten
         if self.rect.bottom > HEIGHT:
             self.kill()
@@ -475,7 +474,7 @@ class Pow(pygame.sprite.Sprite):
         self.speedy = self.game.power_up_speed
 
     def update(self):
-        self.rect.y += self.speedy
+        self.rect.y += self.speedy * self.game.time_diff
         # Beim verlassen des Bildschrims töten
         if self.rect.top > HEIGHT:
             self.kill()
