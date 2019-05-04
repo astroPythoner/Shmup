@@ -647,6 +647,7 @@ class Game():
 
         # Spiel wird wieder gestartet
         self.won_end_gegner = False
+        self.in_end_gegner = False
         self.game_over = None
         self.score = 0
 
