@@ -7,6 +7,7 @@
 
 import pygame
 import time
+import __init__
 from joystickpins import JoystickPins, KeyboardStick
 from constants import *
 from sprites import *
@@ -470,9 +471,9 @@ class Game():
             self.draw_text(surf, "Gewonnen", 32, WIDTH / 2, HEIGHT / 2.2)
             self.draw_text(surf, "Schaffst du das nächste Level auch?", 28, WIDTH / 2, HEIGHT / 1.8)
         elif calling_reason == BEFORE_FIRST_GAME:
-            self.draw_text(surf, "Shut them up!", 32, WIDTH / 2, HEIGHT / 2.2)
+            self.draw_text(surf, "Shoot them up!", 32, WIDTH / 2, HEIGHT / 2.2)
         elif calling_reason == START_GAME:
-            self.draw_text(surf, "Shut them up!", 32, WIDTH / 2, HEIGHT / 2.2)
+            self.draw_text(surf, "Shoot them up!", 32, WIDTH / 2, HEIGHT / 2.2)
             if selected == 0:
                 self.draw_text(surf, "Multi player", 34, WIDTH / 2 + 100, HEIGHT / 1.8, color=RED)
                 self.draw_text(surf, "Single player", 25, WIDTH / 2 - 100, HEIGHT / 1.8 + 8)
