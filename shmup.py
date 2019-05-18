@@ -413,7 +413,7 @@ class Game():
             # Bildschrimzeichnen
             self.show_on_screen(surf, None, with_waiting=False, diyplay_flip=False)
             self.draw_text(surf, "Wähle deine Kontroller", 32, WIDTH / 2, HEIGHT / 2.2)
-            # Jeden gefundenen Kontroller zut Auswahl stellen
+            # Jeden gefundenen Kontroller zur Auswahl stellen
             for controller in self.all_joysticks:
                 if self.all_joysticks.index(controller) == selected_controller_num:
                     self.draw_text(surf, controller.get_name(), 30, WIDTH / 2 - 10, HEIGHT / 1.9 + 35 * self.all_joysticks.index(controller), rect_place="oben_rechts", color=RED)
@@ -450,7 +450,7 @@ class Game():
                 return False
         # Wenn genug Kontroller gewählt wurden stimmt die Auswahl. Es wrid True zurückgegeben
         if len(selected_controllers) == num_joysticks:
-            all_joysticks = selected_controllers
+            self.all_joysticks = selected_controllers
             return True
         # Wenn die Auswahl nicht stimmt wird False zurückgegeben
         else:
