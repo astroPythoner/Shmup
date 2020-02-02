@@ -366,13 +366,13 @@ class EndGegner(pygame.sprite.Sprite):
         self.mask = None
 
     def update(self):
-        # Wenn der Endgegner seine entgültige Position noch nicht erreicht hat. Fliegt er langsam dort hin
+        # Wenn der Endgegner seine entgültige Position auf dem Weg nach unten noch nicht erreicht hat. Fliegt er langsam dort hin
         if self.rect.centery < HEIGHT/4:
             if self.rect.centery + 3 > HEIGHT/4:
                 self.rect.centery = HEIGHT/4
             else:
                 self.rect.centery += 3
-        # Wenn die Endposition erreicht ist und man mindestens ind Level 30 ist bewegt sich der Edngegner nach links und rechts
+        # Wenn die Endposition erreicht ist und man mindestens in Level 30 ist bewegt sich der Edngegner nach links und rechts
         elif self.game.level >= 30:
             # self.direction wechselt immer zwischen links und rechts, wenn man an einen linken Rand bei 1/3 Bildschirmbreite stößt oder am rechtem Rand bei 2/3 stößt
             if self.direction == LEFT:
