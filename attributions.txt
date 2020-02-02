@@ -14,5 +14,17 @@ Art:
     "space shooter art" art by Kenney.nl
     https://opengameart.org/content/space-shooter-art
 
+Spaceships:
+    Spaceships Set (1.0)
+
+    Created and Distributed by Wisedawn (https://wisedawn.itch.io/)
+    Creation Date: 01/03/2019
+
+    License: (Creative Commons Zero, CC0)
+    http://creativecommons.org/publicdomain/zero/1.0/
+
+    Follow on Twitter:
+    https://twitter.com/wisedawndev
+
 Music:
     Frozen Jam by tgfcoder <https://twitter.com/tgfcoder> licensed under CC-BY-3

@@ -22,6 +22,10 @@ Sammle ausßerdem die Power-Ups Schild, Lebensbonus und Schussupgrade ein.
 ## Multiplayer:
 Schließe einen anderen Controller an (wenn er nicht aufgenommen ist lese dir das [Erstellen neuer Kontrollermappings](https://github.com/astroPythoner/joystickpins/wiki) in dem joystickspins Projekt durch) und du kannst mit zwei Spielern die die Kometen und Raumschiffe jagen!
 
+![image not found](https://raw.githubusercontent.com/astroPythoner/Shmup/master/img/screenshot1.png)
+![](https://raw.githubusercontent.com/astroPythoner/Shmup/master/img/screenshot2.png)
+![](https://raw.githubusercontent.com/astroPythoner/Shmup/master/img/screenshot3.png)
+
 ***
 
 # Copyright/Attribution Notice:
@@ -42,6 +46,22 @@ Thanks to Kenney from "www.kenney.nl".
 "space shooter art" art by Kenney.nl
 
 https://opengameart.org/content/space-shooter-art
+
+##Spaceships:
+Spaceships Set (1.0)
+
+Created and Distributed by Wisedawn (https://wisedawn.itch.io/)
+
+Creation Date: 01/03/2019
+
+License: (Creative Commons Zero, CC0)
+
+http://creativecommons.org/publicdomain/zero/1.0/
+
+Follow on Twitter:
+
+https://twitter.com/wisedawndev
+
 
 ## Music:
 Frozen Jam by tgfcoder <https://twitter.com/tgfcoder> licensed under CC-BY-3
