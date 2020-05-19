@@ -1,0 +1,8 @@
+{
+  "name": "Shmup",
+  "description": "Ein Spiel ähnlich wie Space Invaders. Spiele gegen Endgeger und schießende Feinde oder gegen herumfliegende Felsen. Mit deinem Raumschiff musst du alle besiegen. Sammle dabei auch die Power-Ups um länger durchzuhalten. Schaffst du es bis in die hohen Level?",
+  "type": "Space Invaders",
+  "author": "AstroPythoner",
+  "players": "1 to 2",
+  "playable with": ["Controller","Tastatur als Controller"]
+}

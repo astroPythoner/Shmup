@@ -3,7 +3,7 @@ Shoot them up! Space invaders like game with pygame
 
 # Ausführen
 ```
-python3 shmup.py
+python3 main.py
 ```
 
 # Notwendige Bibliotheken
@@ -47,7 +47,7 @@ Thanks to Kenney from "www.kenney.nl".
 
 https://opengameart.org/content/space-shooter-art
 
-##Spaceships:
+## Spaceships:
 Spaceships Set (1.0)
 
 Created and Distributed by Wisedawn (https://wisedawn.itch.io/)

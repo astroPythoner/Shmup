@@ -8,7 +8,12 @@
 import pygame
 import time
 import __init__
-from joystickpins import JoystickPins, KeyboardStick
+try:
+    from joystickpins import JoystickPins, KeyboardStick
+except Exception:
+    from joystickpins import joystickpins
+    JoystickPins = joystickpins.JoystickPins
+    KeyboardStick = joystickpins.KeyboardStick
 from constants import *
 from sprites import *
 
