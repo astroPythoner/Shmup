@@ -368,7 +368,7 @@ class EndGegner(pygame.sprite.Sprite):
     def update(self):
         # Wenn der Endgegner seine entgültige Position auf dem Weg nach unten noch nicht erreicht hat. Fliegt er langsam dort hin
         if self.rect.centery < HEIGHT/4:
-            if self.rect.centery + 3 > HEIGHT/4:
+            if self.rect.centery + 4 > HEIGHT/4:
                 self.rect.centery = HEIGHT/4
             else:
                 self.rect.centery += 3
@@ -376,15 +376,15 @@ class EndGegner(pygame.sprite.Sprite):
         elif self.game.level >= 30:
             # self.direction wechselt immer zwischen links und rechts, wenn man an einen linken Rand bei 1/3 Bildschirmbreite stößt oder am rechtem Rand bei 2/3 stößt
             if self.direction == LEFT:
-                self.rect.x -= self.speed_x * self.game.time_diff
+                self.rect.x -= max([self.speed_x * self.game.time_diff])
                 if self.rect.centerx < 1/3 * WIDTH:
                     self.direction = RIGHT
             elif self.direction == RIGHT:
-                self.rect.x += self.speed_x * self.game.time_diff
+                self.rect.x += max([self.speed_x * self.game.time_diff,1])
                 if self.rect.centerx > 2/3 * WIDTH:
                     self.direction = LEFT
         # Rotation
-        self.rotate()
+         self.rotate()
         # Schießen ...
         if self.mode == SHOOT:
             if self.last_shot + self.game.end_gegner_bullet_time < pygame.time.get_ticks():
