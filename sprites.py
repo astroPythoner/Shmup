@@ -384,7 +384,7 @@ class EndGegner(pygame.sprite.Sprite):
                 if self.rect.centerx > 2/3 * WIDTH:
                     self.direction = LEFT
         # Rotation
-         self.rotate()
+        self.rotate()
         # Schießen ...
         if self.mode == SHOOT:
             if self.last_shot + self.game.end_gegner_bullet_time < pygame.time.get_ticks():
