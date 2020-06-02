@@ -54,6 +54,7 @@ class Game():
 
         # Andere Werte:
         # Level anfangs auf 1 setzen und die Spielvariablen auf diese Schwierigkeit stellen
+        self.mode = LEVEL_MODE
         self.level = 1
         self.make_game_values_more_difficult()
         # Im Multiplayer-modus?
@@ -69,6 +70,9 @@ class Game():
         # Bin ich im Endgegnerkampf und hab ich gegen ihn gewonnen?
         self.in_end_gegner = False
         self.won_end_gegner = False
+        # spwaning onjects in marathon modus
+        self.made_enemies = False
+        self.made_end_gegner = False
         # Wenn debug True ist werden mit Prints Infos zum aktuellen Stand des Spiels ausgegeben. Achtung, prints machen das Spiel langsam und es fängt an zu laggen
         self.debug = False
         # Wenn True schreibt Bildschirmrate oben links in Eck.
@@ -461,7 +465,7 @@ class Game():
         else:
             return False
 
-    def show_on_screen(self, surf, calling_reason, selected=None, with_waiting=True, diyplay_flip=True):
+    def show_on_screen(self, surf, calling_reason, selected=None, with_waiting=True, diyplay_flip=True, selected_row=1):
         # Auf dem Bildschirm die Texte zeigen, die zwischen den Levels stehen.
         # Wenn with_waiting wird hier gewartet bis Start dedrückt wird.
         global level
@@ -487,8 +491,10 @@ class Game():
                 self.draw_text(surf, "Single player", 34, WIDTH / 2 - 100, HEIGHT / 1.8, color=RED)
 
         # Standart Texte
-        self.draw_text(surf, "SHMUP!", 64, WIDTH / 2, HEIGHT / 6.5)
-        self.draw_text(surf, "Level: " + str(self.level), 45, WIDTH / 2, HEIGHT / 3.5)
+        self.draw_text(surf, "SHMUP!", 64, WIDTH / 2, HEIGHT / 10)
+        if calling_reason in [LOST_GAME,WON_GAME,BEFORE_FIRST_GAME]:
+            self.draw_text(surf, "Modus: " + str(self.mode), 35, WIDTH / 2, HEIGHT / 3.8, color=[RED,WHITE][selected_row])
+            self.draw_text(surf, "Level: " + str(self.level), 35, WIDTH / 2, HEIGHT / 3, color=[WHITE,RED][selected_row])
         self.draw_text(surf, "Drücke Start oder Leertaste zum Starten", 18, WIDTH / 2, HEIGHT * 4 / 5)
         self.draw_text(surf, "Drücke Start und Select oder Leertaste und Enter zum Beenden", 18, WIDTH / 2, HEIGHT * 4 / 5 + 23)
         # Bei Multi- / Singleplayer auswahl steht wird der erste Text gezeigt, ansonten der normale
@@ -502,9 +508,10 @@ class Game():
             pygame.display.flip()
 
         # wenn_waiting hier auf Tastendruck von Start warten
-        last_switch = pygame.time.get_ticks()
         if with_waiting:
             waiting = True
+            last_switch = pygame.time.get_ticks()
+            selected_row = selected_row
             while waiting:
                 clock.tick(FPS)
                 # Quit-events
@@ -514,21 +521,35 @@ class Game():
                 # mit Start geht's weiter
                 if self.check_key_pressed(START):
                     waiting = False
-                # Links und Rechts zum erhöhen oder verringern des Levels
-                if self.check_key_pressed(LEFT) and last_switch + 300 < pygame.time.get_ticks():
-                    last_switch = pygame.time.get_ticks()
-                    self.level -= 1
-                    if self.level < 1:
-                        self.level = 1
-                    self.make_game_values_more_difficult()
+                # einstellen
+                if self.check_key_pressed(UP):
+                    selected_row = 0
                     waiting = False
-                    self.show_on_screen(surf, calling_reason, selected, with_waiting, diyplay_flip)
-                if self.check_key_pressed(RIGHT) and last_switch + 300 < pygame.time.get_ticks():
-                    last_switch = pygame.time.get_ticks()
-                    self.level += 1
-                    self.make_game_values_more_difficult()
+                    self.show_on_screen(surf, calling_reason, selected, with_waiting, diyplay_flip,selected_row=selected_row)
+                if self.check_key_pressed(DOWN):
+                    selected_row = 1
                     waiting = False
-                    self.show_on_screen(surf, calling_reason, selected, with_waiting, diyplay_flip)
+                    self.show_on_screen(surf, calling_reason, selected, with_waiting, diyplay_flip,selected_row=selected_row)
+                if self.check_key_pressed(LEFT) and last_switch + 200 < pygame.time.get_ticks():
+                    if selected_row == 0:
+                        self.mode = MARATHON_MODE
+                    if selected_row == 1:
+                        last_switch = pygame.time.get_ticks()
+                        self.level -= 1
+                        if self.level < 1:
+                            self.level = 1
+                        self.make_game_values_more_difficult()
+                    waiting = False
+                    self.show_on_screen(surf, calling_reason, selected, with_waiting, diyplay_flip,selected_row=selected_row)
+                if self.check_key_pressed(RIGHT) and last_switch + 200 < pygame.time.get_ticks():
+                    if selected_row == 0:
+                        self.mode = LEVEL_MODE
+                    if selected_row == 1:
+                        last_switch = pygame.time.get_ticks()
+                        self.level += 1
+                        self.make_game_values_more_difficult()
+                    waiting = False
+                    self.show_on_screen(surf, calling_reason, selected, with_waiting, diyplay_flip,selected_row=selected_row)
 
     def draw_shield_bar(self, surf, x, y, health, color=RED):
         # Anzeige, wie viel Leben ein Spieler noch hat
@@ -553,11 +574,14 @@ class Game():
             surf.blit(img, img_rect)
 
     def draw_level(self, surf, x, y, color=GREEN):
-        # Level oben rechts anzeigen, darunter ein Anzeige, wie weit man schon im Level ist
+        # Level oben links anzeigen, darunter ein Anzeige, wie weit man schon im Level ist
         self.draw_text(surf, str(self.level), 50, x - 4, y - 4, rect_place="oben_links")
         BAR_LENGTH = 20
         BAR_HEIGHT = HEIGHT - 60
-        fill = (self.score / self.needed_score) * BAR_HEIGHT
+        if self.mode == MARATHON_MODE:
+            fill = (self.score / 1800) * BAR_HEIGHT
+        else:
+            fill = (self.score / self.needed_score) * BAR_HEIGHT
         if fill < 0:
             fill = 0
         if fill > BAR_HEIGHT:
@@ -664,6 +688,9 @@ class Game():
         self.enemy_bullets = pygame.sprite.Group()
         self.powerups = pygame.sprite.Group()
         self.shields = pygame.sprite.Group()
+        self.end_gegner = None
+        self.made_enemies = False
+        self.made_end_gegner = False
 
         # Spieler werden erstrellt, ja nachdem ob Multi oder Single Player einer oder zwei
         self.players = []
@@ -709,30 +736,34 @@ class Game():
 
     def detect_and_react_collisions(self):
         # Überprüfen ob ein Gegner oder Meteorit getroffen wurde
-        if (self.in_end_game_animation == False and self.score < self.needed_score) or (self.level % 10 == 0 and self.in_end_gegner == True and self.needed_score >= self.score):
+        if self.in_end_game_animation == False:
             hits = pygame.sprite.groupcollide(self.mobs, self.bullets, False, True)
             for hit in hits:
-                if self.in_end_gegner == False or (self.in_end_gegner and (
-                        (hit.rect.centerx > self.end_gegner.rect.centerx + 150 or hit.rect.centerx < self.end_gegner.rect.centerx - 150) or hit.rect.centery > self.end_gegner.rect.centery + 150)):
-                    hit.kill()
+                if (self.in_end_gegner == False and self.mode == LEVEL_MODE) or (not self.made_end_gegner and self.mode == MARATHON_MODE) or ((self.in_end_gegner or self.made_end_gegner) and ((hit.rect.centerx > self.end_gegner.rect.centerx + 150 or hit.rect.centerx < self.end_gegner.rect.centerx - 150) or hit.rect.centery > self.end_gegner.rect.centery + 150)):
+                    # punkte erhöhen
                     self.total_treffer += 1
                     self.score += 55 - hit.radius
-                    if self.score > self.needed_score:
-                        self.score = self.needed_score
+                    if self.score > self.needed_score and self.mode == LEVEL_MODE: self.score = self.needed_score
+                    # explosion
                     random.choice(expl_sounds).play()
                     expl = Explosion(self, hit.rect.center, 'lg')
                     self.all_sprites.add(expl)
+                    # powerup zufällig generieren
                     if random.random() > self.power_up_percent:
                         pow = Pow(self, hit.rect.center)
                         self.all_sprites.add(pow)
                         self.powerups.add(pow)
-                    if self.level % 5 == 0 and not (self.level % 10 == 0 and self.in_end_gegner == True and self.needed_score >= self.score):
-                        self.newenemy()
-                    elif self.level % 5 != 0:
-                        self.newmob()
+                    # eventuell neu spawnen
+                    if not hit.kill_when_out_of_screen:
+                        if isinstance(hit, Mob):
+                            self.newmob()
+                        elif isinstance(hit, Enemy):
+                            self.newenemy()
+                    # getroffenen killen
+                    hit.kill()
 
         # Überprüfen ob der Endgegner getroffen wurde
-        if self.level % 10 == 0 and self.in_end_gegner == True and self.needed_score >= self.score:
+        if (self.in_end_gegner == True or self.made_end_gegner) and self.in_end_game_animation==False:
             found_hit = False
             hit_place = (-100, -100)
             hits = pygame.sprite.spritecollide(self.end_gegner, self.bullets, False)
@@ -763,7 +794,7 @@ class Game():
         # Überprüfen ob der Spieler von etwas getroffen wurde oder ob der Spieler gestroben ist
         for player in self.players:
             # Überprüfen ob der Spieler von einem Schuss getroffen wurde
-            if (self.in_end_game_animation == False and self.score < self.needed_score and self.level % 5 == 0) or (self.level % 10 == 0 and self.in_end_gegner == True and self.needed_score >= self.score):
+            if self.in_end_game_animation == False:
                 if not player.having_shield:
                     hits = pygame.sprite.spritecollide(player, self.enemy_bullets, True)
                     for hit in hits:
@@ -791,7 +822,7 @@ class Game():
                         self.all_sprites.add(expl)
 
             # Überprüfen ob der Spieler von einem Gegner oder Meteorit getroffen wurde
-            if (self.in_end_game_animation == False and self.score < self.needed_score) or (self.level % 10 == 0 and self.in_end_gegner == True and self.needed_score >= self.score):
+            if self.in_end_game_animation == False:
                 if not player.having_shield:
                     hits = pygame.sprite.spritecollide(player, self.mobs, True, pygame.sprite.collide_circle)
                     for hit in hits:
@@ -827,7 +858,7 @@ class Game():
                             self.newmob()
 
             # Überprüfen ob der Spieler ein Power_Up gesammelt hat
-            if (self.in_end_game_animation == False and self.score < self.needed_score) or (self.level % 10 == 0 and self.in_end_gegner == True and self.needed_score >= self.score):
+            if self.in_end_game_animation == False:
                 hits = pygame.sprite.spritecollide(player, self.powerups, True)
                 for hit in hits:
                     if hit.type == 'shield':
@@ -849,75 +880,113 @@ class Game():
                 self.game_over = LOST_GAME
                 self.in_end_game_animation = False
                 self.in_end_gegner = False
+                # make new player and new colors to meteors and enemies
+                self.meteor_images = random.choice([brown_meteor_images, grey_meteor_images])
+                self.enemy_color = random.choice(enemy_colors)
+                for player in self.players:
+                    player.lives = self.player_lives
+                    if not self.multiplayer:
+                        Player.color = random.randrange(0, len(player_imges))
+                    player_mini_img = pygame.transform.scale(player_imges[player.color], (37, 28))
+                    player_mini_img.set_colorkey(BLACK)
 
-        # Wenn der Spieler die für das Level benötigte Puktezahl erreicht hat startet die Aniamtion am Ende des Spiels, in der ein Gegner oder Metoerit nach dem anderen explodiert, oder der Endgegner taucht auf
-        if self.score >= self.needed_score and self.in_end_game_animation == False and self.game_over == None:
-            all_alive = True
-            for player in self.players:
-                if not player.alive():
-                    all_alive = False
-            if all_alive:
-                if self.level % 10 == 0:
-                    if self.in_end_gegner and not self.end_gegner.alive():
-                        if self.debug:
-                            print("Endgegner killed. Showing end game animation")
-                        self.in_end_gegner = False
+        if self.mode == MARATHON_MODE:
+            # nach score von 200 schießende Gegner
+            if self.score > 0:
+                if self.score > 1000 and not self.made_enemies:
+                    self.made_enemies = True
+                    for i in self.mobs:
+                        i.kill_when_out_of_screen = True
+                    for x in range(self.anz_enemies):
+                        self.newenemy()
+                # nach score von 350 Endgegner
+                if self.score > 1800 and not self.made_end_gegner:
+                    self.made_end_gegner = True
+                    for i in self.mobs:
+                        i.kill_when_out_of_screen = True
+                    self.end_gegner = EndGegner(self)
+                    self.all_sprites.add(self.end_gegner)
+                # von vorne anfangen
+                if self.made_end_gegner and not self.end_gegner.alive():
+                    self.end_gegner = None
+                    self.made_enemies = False
+                    self.made_end_gegner = False
+                    for x in range(self.anz_mobs):
+                        self.newmob()
+                    self.meteor_images = random.choice([brown_meteor_images, grey_meteor_images])
+                    self.enemy_color = random.choice(enemy_colors)
+                    self.score = 0
+
+        else:
+            # LEVEL MODE: Wenn der Spieler die für das Level benötigte Puktezahl erreicht hat startet die Aniamtion am Ende des Spiels oder der Endgegner taucht auf
+            if self.score >= self.needed_score and self.in_end_game_animation == False and self.game_over == None:
+                all_alive = True
+                for player in self.players:
+                    if not player.alive():
+                        all_alive = False
+                if all_alive:
+                    if self.level % 10 == 0:
+                        if self.in_end_gegner and not self.end_gegner.alive():
+                            if self.debug:
+                                print("Endgegner killed. Showing end game animation")
+                            self.in_end_gegner = False
+                            if self.mode == LEVEL_MODE:
+                                self.in_end_game_animation = True
+                            self.won_end_gegner = True
+                        elif self.in_end_gegner == False and self.won_end_gegner == False:
+                            if self.debug:
+                                print("Endgegner taucht auf")
+                            for i in self.mobs:
+                                i.kill_when_out_of_screen = True
+                            self.end_gegner = EndGegner(self)
+                            self.all_sprites.add(self.end_gegner)
+                            self.in_end_gegner = True
+                    else:
                         self.in_end_game_animation = True
-                        self.won_end_gegner = True
-                    elif self.in_end_gegner == False and self.won_end_gegner == False:
-                        if self.debug:
-                            print("Endgegner taucht auf")
-                        for i in self.mobs:
-                            i.kill_when_out_of_screen = True
-                        self.end_gegner = EndGegner(self)
-                        self.all_sprites.add(self.end_gegner)
-                        self.in_end_gegner = True
-                else:
-                    self.in_end_game_animation = True
-        # Macht die Animation am Ende des Spiels, in der ein Gegner oder Metoerit nach dem anderen explodiert,
-        if self.in_end_game_animation:
-            self.draw_text(screen, "Gewonnen", 32, WIDTH / 2, HEIGHT / 2.2)
-            if len(self.mobs.sprites()) > 0 and self.end_game_animation_time + 350 < pygame.time.get_ticks():
-                mob_to_explode = random.choice(self.mobs.sprites())
-                expl = Explosion(self, mob_to_explode.rect.center, size="lg")
-                self.all_sprites.add(expl)
-                mob_to_explode.kill()
-                self.end_game_animation_time = pygame.time.get_ticks()
-                if len(self.mobs.sprites()) == 0:
+            # Macht die Animation am Ende des Spiels, in der ein Gegner oder Metoerit nach dem anderen explodiert,
+            if self.in_end_game_animation:
+                self.draw_text(screen, "Gewonnen", 32, WIDTH / 2, HEIGHT / 2.2)
+                if len(self.mobs.sprites()) > 0 and self.end_game_animation_time + 350 < pygame.time.get_ticks():
+                    mob_to_explode = random.choice(self.mobs.sprites())
+                    expl = Explosion(self, mob_to_explode.rect.center, size="lg")
+                    self.all_sprites.add(expl)
+                    mob_to_explode.kill()
+                    self.end_game_animation_time = pygame.time.get_ticks()
+                    if len(self.mobs.sprites()) == 0:
+                        self.in_end_game_animation = False
+                elif len(self.mobs) == 0:
                     self.in_end_game_animation = False
-            elif len(self.mobs) == 0:
-                self.in_end_game_animation = False
-                self.in_end_gegner = False
-        # Ist die Animation am Ende des Spiels um und du nichtmehr im Spiel bist. Geht es ab ins nächste Level
-        if self.in_end_game_animation == False and self.in_end_gegner == False and self.score >= self.needed_score and self.end_game_animation_time + 700 < pygame.time.get_ticks() and self.game_over == None:
-            if self.debug:
-                print("Going to next level")
-            self.level += 1
-            self.game_over = WON_GAME
-            self.won_end_gegner = False
-            # make the game more difficult in the next level
-            self.make_game_values_more_difficult()
-            # make new player and new colors to meteors and enemies
-            self.meteor_images = random.choice([brown_meteor_images, grey_meteor_images])
-            self.enemy_color = random.choice(enemy_colors)
-            for player in self.players:
-                player.lives = self.player_lives
-                if not self.multiplayer:
-                    Player.color = random.randrange(0, len(player_imges))
-                player_mini_img = pygame.transform.scale(player_imges[player.color], (37, 28))
-                player_mini_img.set_colorkey(BLACK)
+                    self.in_end_gegner = False
+            # Ist die Animation am Ende des Spiels um und du nichtmehr im Spiel bist. Geht es ab ins nächste Level
+            if self.in_end_game_animation == False and self.in_end_gegner == False and self.score >= self.needed_score and self.end_game_animation_time + 700 < pygame.time.get_ticks() and self.game_over == None and self.mode == LEVEL_MODE:
+                if self.debug:
+                    print("Going to next level")
+                self.level += 1
+                self.game_over = WON_GAME
+                self.won_end_gegner = False
+                # make the game more difficult in the next level
+                self.make_game_values_more_difficult()
+                # make new player and new colors to meteors and enemies
+                self.meteor_images = random.choice([brown_meteor_images, grey_meteor_images])
+                self.enemy_color = random.choice(enemy_colors)
+                for player in self.players:
+                    player.lives = self.player_lives
+                    if not self.multiplayer:
+                        Player.color = random.randrange(0, len(player_imges))
+                    player_mini_img = pygame.transform.scale(player_imges[player.color], (37, 28))
+                    player_mini_img.set_colorkey(BLACK)
 
     def draw_display(self):
         # Bildschrim zeichnen
         if self.game_over == None:
             self.all_sprites.draw(screen)
         # Anzeigen am Rand des Bilschirms zeichnen
-        if self.level % 5 == 0:
+        if self.level % 5 == 0 or self.mode == MARATHON_MODE:
             self.draw_level(screen, 10, 5, level_bar_colors[self.enemy_color])
         else:
             self.draw_level(screen, 10, 5, level_bar_colors[[brown_meteor_images, grey_meteor_images].index(self.meteor_images)])
         # Im Endgegnerkampf Leben des Endgegners in entsprechender Farbe anzeigen
-        if self.level % 10 == 0 and self.in_end_gegner == True and self.needed_score >= self.score:
+        if self.in_end_gegner == True or self.made_end_gegner:
             self.draw_end_gegner_bar(screen, 50, 55, color = endgergner_bar_colors[self.enemy_color])
         self.draw_erreichtes(screen, WIDTH - 10, 5)
         for player in self.players:

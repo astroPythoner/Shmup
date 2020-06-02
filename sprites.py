@@ -100,7 +100,7 @@ class Player(pygame.sprite.Sprite):
                 self.last_shot = now
                 self.game.total_schuesse += 1
                 # wenn du gegen den end gegner spielst hast du nicht so gute Schüsse, da die Berechnung der Treffer bei vielen Schüssen zu lange braucht
-                if self.game.in_end_gegner and self.power > 2:
+                if (self.game.in_end_gegner or self.game.made_end_gegner) and self.power > 2:
                     self.power = 2
                 if self.power == 1:
                     bullet = Bullet(self.game, self.rect.centerx, self.rect.top,self)
@@ -232,6 +232,8 @@ class Mob(pygame.sprite.Sprite):
         self.rot = 0
         self.rot_speed = random.randrange(-8, 8)
         self.last_update = pygame.time.get_ticks()
+        # Soll der Meteorit wiederauftauchen wenn er aus dem Spielfeld fliegt oder nicht
+        self.kill_when_out_of_screen = False
 
     def rotate(self):
         # Nach Ablauf der Rotationszeit self.image auf des gedrehte Originalbild setzen
@@ -253,10 +255,13 @@ class Mob(pygame.sprite.Sprite):
         self.rect.y += self.speedy * self.game.time_diff
         # Beim Flug aus dem Spielfeld wieder nach oben setzen um erneut hinab zu fallen
         if self.rect.top > HEIGHT + 10 or self.rect.left < -100 or self.rect.right > WIDTH + 100:
-            # Geschwindikeiten werden wieder zufällig gesetzt
-            self.rect.x = random.randrange(WIDTH - self.rect.width)
-            self.rect.y = random.randrange(-100, -40)
-            self.speedy = random.randrange(self.game.mob_speed_y[0], self.game.mob_speed_y[1])
+            if self.kill_when_out_of_screen:
+                self.kill()
+            else:
+                # Geschwindikeiten werden wieder zufällig gesetzt
+                self.rect.x = random.randrange(WIDTH - self.rect.width)
+                self.rect.y = random.randrange(-100, -40)
+                self.speedy = random.randrange(self.game.mob_speed_y[0], self.game.mob_speed_y[1])
 
 class Enemy(pygame.sprite.Sprite):
     # Schießende Gegner

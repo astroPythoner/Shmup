@@ -19,6 +19,9 @@ WON_GAME = "won"
 START_GAME = "start"
 BEFORE_FIRST_GAME = "before first game"
 
+MARATHON_MODE = "Marathon"
+LEVEL_MODE = "Level"
+
 LEFT = "left"
 RIGHT = "right"
 UP = "up"
